@@ -49,18 +49,16 @@ import tempfile
 from jsonlibconfig import encoder
 
 
-SWISS_DAT = "/home/joanna/data/uniprot_dat/"
-SWISS_FASTA = "/home/joanna/data/uniprot_fasta/"
-SWISS_BLAST = "/home/joanna/data/uniprot_sprot.fasta"
+SWISS_DAT = "/home/joanna/data/swissprot_dat/uniprot_dat/"
+SWISS_FASTA = "/home/joanna/data/swiss_fasta/uniprot_fasta/"
+SWISS_BLAST = "/home/joanna/data/uniprot_sprot"
 PDB_BLAST = "/home/joanna/data/pdb_seqres.txt"
-PDB_DIR = "/home/joanna/data/pdb/"
+PDB_DIR = "/mnt/cmbi4/pdb/flat"
 DSSP_DIR = "/home/joanna/data/dssp/"
-PDBFIND = "/home/joanna/data/PDBFIND2.TXT"
+PDBFIND = "/mnt/cmbi4/pdbfinder/PDBFIND.TXT"
 SCRIPT_PATH = os.path.realpath(__file__)
 KMAD = '/'.join(SCRIPT_PATH.split('/')[:-2] + ['kmad'])
-KMAD = '/home/joanna/cmbi/kmad/kmad'
-DALI = '/home/joanna/software/DaliLite_3.3/DaliLite'
-PDB_DALI = '/home/joanna/data/pdb/for_dali'
+
 
 log_file = "test.log"
 if os.path.exists(log_file):
@@ -131,9 +129,6 @@ def run_blast(sequence, blastdb):
     if os.path.exists(out_blast):
         with open(out_blast) as a:
             output = a.read().splitlines()
-        logging.debug(output)
-        if output:
-            logging.debug('output True')
         os.remove(out_blast)
     else:
         output = []
@@ -368,54 +363,62 @@ def get_structure_data(query_seq, pdb_fastas):
     return result
 
 
-def mk_strct_al_dali(strct_data1, strct_data2):
+# run structure alignment and return a dictionary of equivalent positions
+def mk_strct_al_modeller(strct_data1, strct_data2):
+    _stdout = sys.stdout
+    sys.stdout = open(os.devnull, 'w')
+
+    tmp_file = tempfile.NamedTemporaryFile(suffix=".fasta", delete=False)
+    env = m.environ()
+
+    aln = m.alignment(env)
+    code1 = 'pdb' + strct_data1['id']
+    code2 = 'pdb' + strct_data2['id']
+    chain1 = strct_data1['chain_id']
+    chain2 = strct_data2['chain_id']
+    env.io.atom_files_directory = ['.', PDB_DIR]
     result = {}
-    pdb_path1 = os.path.join(PDB_DALI, strct_data1['id'] + '.pdb')
-    pdb_path2 = os.path.join(PDB_DALI, strct_data2['id'] + '.pdb')
-    args = [DALI, '-pairwise', pdb_path1, pdb_path2]
-    aln_id = ""
     try:
-        subprocess.call(args, stdout=subprocess.PIPE)
-        if os.path.exists('summary.txt'):
-            with open('summary.txt') as a:
-                aln = a.read().splitlines()
-            in_eq_section = False
-            for i in aln:
-                if (i.startswith('# Query')
-                        and i[-1] == strct_data1['chain_id'].upper()):
-                    in_eq_section = True
-                    print "in eq section"
-                elif (in_eq_section and len(i.split()) > 3
-                        and i.split()[2][-1] == strct_data2['chain_id'].upper()):
-                    if not result:
-                        aln_id = i.split()[0]
-                    if aln_id == i.split()[0]:
-                        line = i.split()
-                        range1 = range(int(line[3]), int(line[5]) + 1)
-                        range2 = range(int(line[7]), int(line[9]) + 1)
-                        print "line: {}".format(i)
-                        print "range1: {}".format(range1)
-                        print "range2: {}".format(range2)
-                        for j in range(len(range1)):
-                            result[range1[j]] = range2[j]
-                else:
-                    print i.split()
-        files_to_remove = ["mol1.dssp", "mol1A.dat", "mol1B.dat", "mol2.dssp",
-                           "mol2C.dat", "replist", "list1", "list2",
-                           "mol1A.dccp", "mol1B.dccp", "mol1A.txt",
-                           "mol1A.html", "mol1B.txt", "mol1B.html",
-                           "index.html", "summary.txt", "pdb90.html"]
-        remove_files(files_to_remove)
-    except subprocess.CalledProcessError as e:
-        print "Error: {}".format(e.output)
-    print result
+        for (code, chain) in ((code1, chain1), (code2, chain2)):
+            mdl = m.model(env, file=code, model_segment=('FIRST:'+chain,
+                                                         'LAST:'+chain))
+            aln.append_model(mdl, atom_files=code, align_codes=code+chain)
+
+        for (weights, write_fit, whole) in (((1., 0., 0., 0., 1., 0.), False,
+                                             True),
+                                            ((1., 0.5, 1., 1., 1., 0.), False,
+                                             True),
+                                            ((1., 1., 1., 1., 1., 0.), True,
+                                             False)):
+            r = aln.salign(rms_cutoff=3.5, normalize_pp_scores=False,
+                           rr_file='$(LIB)/as1.sim.mat', overhang=30,
+                           gap_penalties_1d=(-450, -50),
+                           gap_penalties_3d=(0, 3), gap_gap_score=0,
+                           gap_residue_score=0,
+                           alignment_type='tree', # If 'progresive', the tree is not
+                                                  # computed and all structures will be
+                                                  # aligned sequentially to the first
+                           #ext_tree_file='1is3A_exmat.mtx', # Tree building can be avoided
+                                                             # if the tree is input
+                           feature_weights=weights, # For a multiple sequence alignment only
+                                                    # the first feature needs to be non-zero
+                           improve_alignment=True, fit=True, write_fit=False,
+                           write_whole_pdb=whole, output='ALIGNMENT QUALITY')
+        if r.qscorepct > 70:
+            aln.write(file=tmp_file.name, alignment_format='FASTA')
+            with open(tmp_file.name) as a:
+                alignment = unwrap(a.read().splitlines())
+
+            for i in range(len(alignment[1])):
+                if alignment[1] != '-' and alignment[3] != '-':
+                    pos1 = get_real_position_al(alignment[1], i)
+                    pos2 = get_real_position_al(alignment[3], i)
+                    result[pos1] = pos2
+    except:
+        print 'Modeller failed'
+    sys.stdout.close()
+    sys.stdout = _stdout
     return result
-
-
-def remove_files(file_list):
-    for i in file_list:
-        if os.path.exists(i):
-            os.remove(i)
 
 
 def mk_strct_alignment(strct_data1, strct_data2):
@@ -530,7 +533,7 @@ def structure_alignment_conf(fasta, output_conf, al_score):
             strct_data = get_structure_data(fasta[i], pdb_fastas)
             eq_seq1_seq2 = {}
             if strct_data['id']:
-                strct_al = mk_strct_al_dali(query_strct_data, strct_data)
+                strct_al = mk_strct_al_modeller(query_strct_data, strct_data)
                 eq_seq1_seq2 = find_equivalent_positions(
                     query_strct_data['positions_map'],
                     strct_data['positions_map'],
@@ -542,7 +545,7 @@ def structure_alignment_conf(fasta, output_conf, al_score):
 def annotate(fasta_in, output_name, output_conf, al_score):
     with open(fasta_in) as a:
         fasta = unwrap(a.read().splitlines())
-    # annotate_secondary_structure(fasta, output_name)
+    annotate_secondary_structure(fasta, output_name)
     structure_alignment_conf(fasta, output_conf, al_score)
 
 
