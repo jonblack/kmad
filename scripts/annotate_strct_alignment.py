@@ -52,7 +52,7 @@ from jsonlibconfig import encoder
 SWISS_DAT = "/home/joanna/data/uniprot_dat/"
 SWISS_FASTA = "/home/joanna/data/uniprot_fasta/"
 SWISS_BLAST = "/home/joanna/data/uniprot_sprot.fasta"
-PDB_BLAST = "/home/joanna/data/pdb_seqres.txt"
+PDB_BLAST = "/home/joanna/data/pdbfind.fasta"
 PDB_DIR = "/home/joanna/data/pdb/"
 DSSP_DIR = "/home/joanna/data/dssp/"
 PDBFIND = "/home/joanna/data/PDBFIND2.TXT"
@@ -338,10 +338,8 @@ def annotate_secondary_structure(fasta, output_name):
         if closest_sp:
             strct_elements = transfer_data_from_homologue(fasta[i + 1],
                                                           closest_sp)
-        print strct_elements
         strct_elements = merge_dicts(strct_elements,
                                      get_strct_from_dssp(fasta[i + 1]))
-        print strct_elements
         strct_data.append(strct_elements)
     out_fasta = encode(fasta, strct_data)
 
@@ -380,24 +378,25 @@ def mk_strct_al_dali(strct_data1, strct_data2):
             with open('summary.txt') as a:
                 aln = a.read().splitlines()
             in_eq_section = False
+            in_query = False
             for i in aln:
                 if (i.startswith('# Query')
                         and i[-1] == strct_data1['chain_id'].upper()):
+                    in_query = True
+                elif in_query and i.startswith("# Structural equi"):
                     in_eq_section = True
-                    print "in eq section"
                 elif (in_eq_section and len(i.split()) > 3
                         and i.split()[2][-1] == strct_data2['chain_id'].upper()):
                     if not result:
                         aln_id = i.split()[0]
                     if aln_id == i.split()[0]:
                         line = i.split()
-                        range1 = range(int(line[3]), int(line[5]) + 1)
-                        range2 = range(int(line[7]), int(line[9]) + 1)
-                        print "line: {}".format(i)
-                        print "range1: {}".format(range1)
-                        print "range2: {}".format(range2)
+                        range1 = range(int(line[3]) - 1, int(line[5]))
+                        range2 = range(int(line[7]) - 1, int(line[9]))
                         for j in range(len(range1)):
                             result[range1[j]] = range2[j]
+                elif in_eq_section and not i.split():
+                    break
                 else:
                     print i.split()
         files_to_remove = ["mol1.dssp", "mol1A.dat", "mol1B.dat", "mol2.dssp",
@@ -408,7 +407,6 @@ def mk_strct_al_dali(strct_data1, strct_data2):
         remove_files(files_to_remove)
     except subprocess.CalledProcessError as e:
         print "Error: {}".format(e.output)
-    print result
     return result
 
 
@@ -416,31 +414,6 @@ def remove_files(file_list):
     for i in file_list:
         if os.path.exists(i):
             os.remove(i)
-
-
-def mk_strct_alignment(strct_data1, strct_data2):
-    args = ['TMalign', strct_data1['pdb_path'], strct_data2['pdb_path']]
-    result = {}
-    output = []
-    try:
-        output = subprocess.check_output(args).splitlines()
-    except subprocess.CalledProcessError as e:
-        print "Error: {}".format(e.output)
-
-    if output:
-        seq1 = output[-4]
-        seq2 = output[-2]
-        al = output[-3]
-        # if (al.find(':' * (len(al) / 4)) != -1
-        if len(seq1) == len(seq2) and len(seq1) == len(al):
-            for i in range(len(seq1)):
-                if al[i] == ':':
-                    pos1 = get_real_position_al(seq1, i)
-                    pos2 = get_real_position_al(seq2, i)
-                    result[pos1] = pos2
-        else:
-            print "bad alignment {}".format(al), al.count(':'), len(al)
-    return result
 
 
 def reverse_dict(some_dict):
