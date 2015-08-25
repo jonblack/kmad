@@ -58,3 +58,5 @@ coverage.sh
 
 # rope
 .ropeproject/
+# python
+scripts/*.pyc
