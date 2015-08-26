@@ -37,16 +37,21 @@ fasta headers:
 
 '''
 import argparse
+import cProfile
 import hjson
 import logging
 import modeller as m
 import os
+import random
 import re
 import sys
 import subprocess
 import tempfile
 
 from jsonlibconfig import encoder
+from hashlib import md5
+from time import localtime
+from Bio import PDB
 
 
 SWISS_DAT = "/home/joanna/data/uniprot_dat/"
@@ -61,6 +66,8 @@ KMAD = '/'.join(SCRIPT_PATH.split('/')[:-2] + ['kmad'])
 KMAD = '/home/joanna/cmbi/kmad/kmad'
 DALI = '/home/joanna/software/DaliLite_3.3/DaliLite'
 PDB_DALI = '/home/joanna/data/pdb/for_dali'
+TMPDIR = '/tmp'
+PDB_HEADERS = "/home/joanna/data/pdb_headers.txt"
 
 log_file = "test.log"
 if os.path.exists(log_file):
@@ -112,6 +119,19 @@ def get_strct_from_dssp(query_seq):
                     if j in equivalent_positions.keys():
                         strct_elements[i].append(equivalent_positions[j])
     return strct_elements
+
+
+def random_filename():
+    good = False
+    while not good:
+        rand_list = list(md5(str(localtime())).hexdigest())
+        random.shuffle(rand_list)
+        rand_string = ''.join(rand_list)
+        rand_name = rand_string + '.pdb'
+        if not os.path.exists(os.path.join(TMPDIR, rand_name)):
+            good = True
+    logging.debug("randname: {}".format(rand_name))
+    return rand_name
 
 
 def run_blast(sequence, blastdb):
@@ -348,28 +368,78 @@ def annotate_secondary_structure(fasta, output_name):
     out.close()
 
 
-def get_structure_data(query_seq, pdb_fastas):
+def check_if_pdbid(some_id, pdb_headers):
+    result = True
+    if len(some_id) != 6:
+        result = False
+    if result:
+        found_chain = False
+        for i in pdb_headers:
+            if some_id in i:
+                found_chain = True
+        if not found_chain:
+            result = False
+    logging.debug("check id {} {}".format(result, some_id))
+    return result
+
+
+def get_structure_data(query_seq, pdb_headers, header):
     result = {'id': '',
               'chain_id': '',
               'pdb_path': '',
               'pdb_seq': '',
               'positions_map': {}
               }
-    blast_result = run_blast(query_seq, PDB_BLAST)
-    if blast_result:
-        result['chain_id'] = blast_result[0].split(',')[1].split('_')[1]
-        result['id'] = blast_result[0].split(',')[1].split('_')[0]
+    if not check_if_pdbid(header.lstrip('>'), pdb_headers):
+        blast_result = run_blast(query_seq, PDB_BLAST)
+        if blast_result:
+            result['chain_id'] = blast_result[0].split(',')[1].split('_')[1]
+            result['id'] = blast_result[0].split(',')[1].split('_')[0]
+            result['pdb_seq'] = get_seq_from_pdb(result['id'],
+                                                 result['chain_id'])
+            result['pdb_path'] = os.path.join(PDB_DIR,
+                                              'pdb' + result['id'].lower() + '.ent')
+            result['positions_map'] = align(result['pdb_seq'], query_seq)
+    else:
+        result['chain_id'] = header[-1]
+        result['id'] = header[1:5]
         result['pdb_seq'] = get_seq_from_pdb(result['id'], result['chain_id'])
         result['pdb_path'] = os.path.join(PDB_DIR,
                                           'pdb' + result['id'].lower() + '.ent')
         result['positions_map'] = align(result['pdb_seq'], query_seq)
+
     return result
+
+
+def write_chain(pdb_id, chain_id):
+    pdb_parser = PDB.PDBParser()
+    pdb_writer = PDB.PDBIO()
+    # pdb_id = pdbname[3:][:-4]
+    pdbpath = os.path.join(PDB_DALI, pdb_id + '.pdb')
+    pdb = pdb_parser.get_structure(pdb_id, pdbpath)
+    pdb_writer.set_structure(pdb)
+    filename = random_filename()
+    outpath = os.path.join(TMPDIR, filename)
+    pdb_writer.save(outpath,
+                    select=SelectChains(chain_id))
+    return outpath
+
+
+class SelectChains(PDB.Select):
+    """ Only accept the specified chains when saving. """
+    def __init__(self, chain_letters):
+        self.chain_letters = chain_letters
+
+    def accept_chain(self, chain):
+        return (chain.get_id() in self.chain_letters)
 
 
 def mk_strct_al_dali(strct_data1, strct_data2):
     result = {}
-    pdb_path1 = os.path.join(PDB_DALI, strct_data1['id'] + '.pdb')
-    pdb_path2 = os.path.join(PDB_DALI, strct_data2['id'] + '.pdb')
+    # pdb_path1 = os.path.join(PDB_DALI, strct_data1['id'] + '.pdb')
+    # pdb_path2 = os.path.join(PDB_DALI, strct_data2['id'] + '.pdb')
+    pdb_path1 = write_chain(strct_data1['id'], strct_data1['chain_id'])
+    pdb_path2 = write_chain(strct_data2['id'], strct_data2['chain_id'])
     args = [DALI, '-pairwise', pdb_path1, pdb_path2]
     aln_id = ""
     try:
@@ -399,12 +469,21 @@ def mk_strct_al_dali(strct_data1, strct_data2):
                     break
                 else:
                     print i.split()
+            logging.debug("path1: {}".format(pdb_path1))
+            logging.debug("path2: {}".format(pdb_path2))
+            logging.debug("id1: {}; chain1: {}".format(strct_data1['id'],
+                                                       strct_data1['chain_id']))
+            logging.debug("id2: {}; chain2: {}".format(strct_data2['id'],
+                                                       strct_data2['chain_id']))
+            logging.debug('\n'.join(aln))
+            logging.debug("{}".format(result))
         files_to_remove = ["mol1.dssp", "mol1A.dat", "mol1B.dat", "mol2.dssp",
                            "mol2C.dat", "replist", "list1", "list2",
                            "mol1A.dccp", "mol1B.dccp", "mol1A.txt",
                            "mol1A.html", "mol1B.txt", "mol1B.html",
-                           "index.html", "summary.txt", "pdb90.html"]
-        remove_files(files_to_remove)
+                           "index.html", "summary.txt", "pdb90.html",
+                           pdb_path1, pdb_path2]
+        # remove_files(files_to_remove)
     except subprocess.CalledProcessError as e:
         print "Error: {}".format(e.output)
     return result
@@ -493,14 +572,15 @@ def write_conf_file(query_seq, eq_positions, output_conf, al_score):
 
 
 def structure_alignment_conf(fasta, output_conf, al_score):
-    with open(PDB_BLAST) as a:
-        pdb_fastas = unwrap(a.read().splitlines())
+    with open(PDB_HEADERS) as a:
+        pdb_headers = a.read().splitlines()
+    header = fasta[0]
     query_sequence = fasta[1]
-    query_strct_data = get_structure_data(query_sequence, pdb_fastas)
+    query_strct_data = get_structure_data(query_sequence, pdb_headers, header)
     eq_positions = {}
     for i in range(2, len(fasta)):
         if not fasta[i].startswith('>'):
-            strct_data = get_structure_data(fasta[i], pdb_fastas)
+            strct_data = get_structure_data(fasta[i], pdb_headers, fasta[i - 1])
             eq_seq1_seq2 = {}
             if strct_data['id']:
                 strct_al = mk_strct_al_dali(query_strct_data, strct_data)
@@ -520,12 +600,15 @@ def annotate(fasta_in, output_name, output_conf, al_score):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Annotate fasta sequences with'
-                                                 ' structural information')
-    parser.add_argument('fasta_in')
-    parser.add_argument('output_filename')
-    parser.add_argument('output_conf')
-    parser.add_argument('--al_score', type=int)
-    args = parser.parse_args()
-    annotate(args.fasta_in, args.output_filename, args.output_conf,
-             args.al_score)
+    if not os.path.exists('dali.lock'):
+        parser = argparse.ArgumentParser(description='Annotate fasta sequences with'
+                                                     ' structural information')
+        parser.add_argument('fasta_in')
+        parser.add_argument('output_filename')
+        parser.add_argument('output_conf')
+        parser.add_argument('--al_score', type=int)
+        args = parser.parse_args()
+        annotate(args.fasta_in, args.output_filename, args.output_conf,
+                 args.al_score)
+    else:
+        print "Already running DALI in this directory"
