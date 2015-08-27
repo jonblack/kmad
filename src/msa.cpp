@@ -343,6 +343,28 @@ fasta::SequenceList msa::remove_gaps(const fasta::SequenceList& alignment) {
 }
 
 
+//pairwise alignment of two profiles
+fasta::SequenceList msa::align_pairwise(
+                                        const profile::ProfileMap& profile1,
+                                        const profile::ProfileMap& profile2,
+                                        const FeatureScores& f_profile1,
+                                        const FeatureScores& f_profile2,
+                                        double gap_open_pen, double end_pen,
+                                        double gap_ext_pen, int codon_length,
+                                        const bool no_feat) {
+  int profile1_length = profile1.begin()->second.size();
+  int profile2_length = profile2.begin()->second.size();
+  ScoringMatrix scores(profile1_length, profile2_length,
+                       gap_open_pen, end_pen, gap_ext_pen, no_feat);
+  scores.calculate_scores(profile1, f_profile1, profile2, f_profile2,
+                          codon_length);
+  fasta::SequenceList alignment;
+  alignment = scores.backtrace_alignment_path(profile1, f_profile1,
+                                              profile2, f_profile2,
+                                              codon_length);
+  return alignment;
+}
+
 fasta::SequenceList msa::align_pairwise(const fasta::Sequence& input_sequence,
                                         const profile::ProfileMap& profile,
                                         const FeatureScores& f_profile,

@@ -114,7 +114,7 @@ am__objects_1 = src/compare_doubles.$(OBJEXT) src/fasta.$(OBJEXT) \
 	src/f_config.$(OBJEXT) src/outfile.$(OBJEXT) \
 	src/optimizer.$(OBJEXT) src/profile.$(OBJEXT) \
 	src/scoring_matrix.$(OBJEXT) src/seq_data.$(OBJEXT) \
-	src/msa.$(OBJEXT)
+	src/msa.$(OBJEXT) src/d_matrix.$(OBJEXT)
 am_kmad_OBJECTS = $(am__objects_1) src/kmad.$(OBJEXT)
 kmad_OBJECTS = $(am_kmad_OBJECTS)
 am__DEPENDENCIES_1 =
@@ -130,7 +130,7 @@ am_test_kmad_OBJECTS = $(am__objects_1) \
 	tests/test_feature_analysis.$(OBJEXT) \
 	tests/test_feature_scores.$(OBJEXT) \
 	tests/test_scoring_matrix.$(OBJEXT) tests/test_msa.$(OBJEXT) \
-	tests/test_outfile.$(OBJEXT)
+	tests/test_outfile.$(OBJEXT) tests/test_d_matrix.$(OBJEXT)
 test_kmad_OBJECTS = $(am_test_kmad_OBJECTS)
 test_kmad_DEPENDENCIES = $(am__DEPENDENCIES_2)
 AM_V_P = $(am__v_P_@AM_V@)
@@ -360,7 +360,8 @@ shared_SOURCES = src/compare_doubles.cpp \
 									src/profile.cpp \
 									src/scoring_matrix.cpp \
 									src/seq_data.cpp \
-									src/msa.cpp
+									src/msa.cpp \
+									src/d_matrix.cpp
 
 include_HEADERS = src/compare_doubles.h \
 									src/fasta.h \
@@ -373,7 +374,8 @@ include_HEADERS = src/compare_doubles.h \
 									src/scoring_matrix.h \
 									src/seq_data.h \
 									src/substitution_matrix.h \
-									src/msa.h
+									src/msa.h \
+									src/d_matrix.cpp
 
 kmad_SOURCES = $(shared_SOURCES) \
 								src/kmad.cpp
@@ -390,7 +392,8 @@ test_kmad_SOURCES = $(shared_SOURCES) \
 										tests/test_feature_scores.cpp \
 										tests/test_scoring_matrix.cpp \
 										tests/test_msa.cpp \
-										tests/test_outfile.cpp
+										tests/test_outfile.cpp \
+										tests/test_d_matrix.cpp
 
 EXTRA_DIST = tests/test_conf_file.cfg \
 						 tests/test_conffile_pattern.cfg \
@@ -551,6 +554,8 @@ src/scoring_matrix.$(OBJEXT): src/$(am__dirstamp) \
 src/seq_data.$(OBJEXT): src/$(am__dirstamp) \
 	src/$(DEPDIR)/$(am__dirstamp)
 src/msa.$(OBJEXT): src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
+src/d_matrix.$(OBJEXT): src/$(am__dirstamp) \
+	src/$(DEPDIR)/$(am__dirstamp)
 src/kmad.$(OBJEXT): src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 
 kmad$(EXEEXT): $(kmad_OBJECTS) $(kmad_DEPENDENCIES) $(EXTRA_kmad_DEPENDENCIES) 
@@ -584,6 +589,8 @@ tests/test_msa.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
 tests/test_outfile.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
+tests/test_d_matrix.$(OBJEXT): tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
 
 test_kmad$(EXEEXT): $(test_kmad_OBJECTS) $(test_kmad_DEPENDENCIES) $(EXTRA_test_kmad_DEPENDENCIES) 
 	@rm -f test_kmad$(EXEEXT)
@@ -598,6 +605,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/compare_doubles.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/d_matrix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/f_config.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/fasta.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/feature_analysis.Po@am__quote@
@@ -611,6 +619,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/seq_data.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_compare_doubles.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_config.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_d_matrix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_fasta.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_feature_analysis.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_feature_scores.Po@am__quote@

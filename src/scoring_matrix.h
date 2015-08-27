@@ -29,6 +29,11 @@ public:
   void calculate_scores(const fasta::Sequence& sequence,
                         const profile::ProfileMap& profile,
                         const FeatureScores& f_profile, int codon_length);
+  void calculate_scores(const profile::ProfileMap& profile1,
+                        const FeatureScores& f_profile1,
+                        const profile::ProfileMap& profile2,
+                        const FeatureScores& f_profile2,
+                        int codon_length);
   ///
   /// traces back the alignment path in the scoring matrices
   ///
@@ -36,6 +41,12 @@ public:
       const fasta::Sequence& sequence, 
       const profile::ProfileMap& profile,
       const FeatureScores& f_profile,
+      int codon_length);
+  fasta::SequenceList backtrace_alignment_path(
+      const profile::ProfileMap& profile1,
+      const FeatureScores& f_profile1,
+      const profile::ProfileMap& profile2,
+      const FeatureScores& f_profile2,
       int codon_length);
   SingleScoringMatrix get_V_matrix();
 private:
