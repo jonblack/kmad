@@ -154,3 +154,10 @@ double profile::get_score(const profile::ProfileMap& p, int position,
   }
   return result;
 }
+
+double profile::profile_score(const profile::ProfileMap& profile1,
+                              const profile::ProfileMap& profile2,
+                              int pos1, int pos2)
+{
+  return 0.;
+}

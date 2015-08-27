@@ -197,3 +197,9 @@ double FeatureScores::get_score(const std::string& feat_name,
                                         unsigned long position) const {
   return m_scores.at(feat_name)[position];
 }
+
+double FeatureScores::profile_score(const FeatureScores& f_profile2,
+                                     int pos1, int pos2) const
+{
+  return 0.;
+}

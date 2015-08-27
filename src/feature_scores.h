@@ -8,6 +8,8 @@
 typedef std::vector<double> Occurences; 
 typedef std::vector<double> Scores;
 
+
+
 class FeatureScores {
   public:
     ///
@@ -35,6 +37,8 @@ class FeatureScores {
     ///
     double get_score(const std::string& feat_name,
                      unsigned long position) const;
+    double profile_score(const FeatureScores& f_profile2,
+                         int pos1, int pos2) const;
   private:
     double m_domain_modifier;
     double m_ptm_modifier;

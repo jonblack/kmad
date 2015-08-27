@@ -103,6 +103,17 @@ namespace msa {
                                      double gap_ext_pen, int codon_length,
                                      const bool first_gapped,
                                      const bool no_feat);
+  ///
+  /// align two profiles
+  /// return dummy sequence to be able to constrcut a new profile from them
+  ///
+  fasta::SequenceList align_pairwise(const profile::ProfileMap& profile1,
+                                     const profile::ProfileMap& profile2,
+                                     const FeatureScores& f_profile1,
+                                     const FeatureScores& f_profile2,
+                                     double gap_open_pen, double end_pen,
+                                     double gap_ext_pen, int codon_length,
+                                     const bool no_feat);
 
   ///
   /// calculates identity with the query sequence

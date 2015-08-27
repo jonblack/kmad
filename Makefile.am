@@ -17,7 +17,8 @@ shared_SOURCES	=	src/compare_doubles.cpp \
 									src/profile.cpp \
 									src/scoring_matrix.cpp \
 									src/seq_data.cpp \
-									src/msa.cpp
+									src/msa.cpp \
+									src/d_matrix.cpp
 
 include_HEADERS = src/compare_doubles.h \
 									src/fasta.h \
@@ -30,7 +31,8 @@ include_HEADERS = src/compare_doubles.h \
 									src/scoring_matrix.h \
 									src/seq_data.h \
 									src/substitution_matrix.h \
-									src/msa.h
+									src/msa.h \
+									src/d_matrix.cpp
 
 
 kmad_SOURCES	=	$(shared_SOURCES) \
@@ -49,7 +51,8 @@ test_kmad_SOURCES = $(shared_SOURCES) \
 										tests/test_feature_scores.cpp \
 										tests/test_scoring_matrix.cpp \
 										tests/test_msa.cpp \
-										tests/test_outfile.cpp
+										tests/test_outfile.cpp \
+										tests/test_d_matrix.cpp
 
 EXTRA_DIST = tests/test_conf_file.cfg \
 						 tests/test_conffile_pattern.cfg \
