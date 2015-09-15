@@ -31,6 +31,7 @@ int main(int argc, char *argv[]) {
     bool fade_out = false;
     bool optimize = false;
     bool no_feat = false;
+    bool tree_guided = false;
     std::string filename;
     std::string output_prefix;
     std::string conf_file;
@@ -93,6 +94,10 @@ int main(int argc, char *argv[]) {
       ("gapped", po::value<bool>(&first_gapped)->default_value(false)
                                                ->implicit_value(true),
        "'first sequence with gaps' mode"
+       )
+      ("tree", po::value<bool>(&tree_guided)->default_value(false)
+                                           ->implicit_value(true),
+       "run a tree guided alignment"
        )
       ("no-feat", po::value<bool>(&no_feat)->default_value(false)
                                            ->implicit_value(true),
@@ -181,7 +186,7 @@ int main(int argc, char *argv[]) {
                                codon_length,
                                one_round, sbst_mat, first_gapped, optimize,
                                fade_out, no_feat);
-    } else {
+    } else if (!tree_guided) {
       bool gapped = true;
       seq_data::SequenceData sequence_data_alignment = seq_data::process_fasta_data(
           fasta_data, f_set, gapped);
@@ -197,6 +202,15 @@ int main(int argc, char *argv[]) {
                                         codon_length,
                                         one_round, sbst_mat, first_gapped,
                                         optimize, fade_out, refine_seq, no_feat);
+    } else {
+      alignment = msa::tree_guided_msa(sequence_data_plain, 
+                                        f_set, gap_open_pen,
+                                        gap_ext_pen, end_pen, domain_modifier, 
+                                        motif_modifier, ptm_modifier,
+                                        strct_modifier, codon_length, no_feat,
+                                        sbst_mat);
+    
+    
     }
 
     // write alignment to file 

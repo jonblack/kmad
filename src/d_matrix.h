@@ -35,6 +35,14 @@ namespace d_matrix {
       const std::string& sbst_mat, const bool no_feat,
       const f_config::FeatureSettingsMap& f_set,
       const seq_data::SequenceData& sequence_data);
+
+  DistanceMatrix update_matrix(const DistanceMatrix& dist_matrix,
+      int node1, int node2, const profile::ProfileMap& new_profile);
+
+
+  std::pair<int, int> find_closest_nodes(const DistanceMatrix& dist_matrix);
+  DistanceMatrix update_matrix(DistanceMatrix& dist_matrix, int node1,
+      int node2, const profile::ProfileMap& profile);
 }
 
 #endif /* DMATRIX_H */

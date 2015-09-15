@@ -54,15 +54,14 @@ from time import localtime
 from Bio import PDB
 
 
-SWISS_DAT = "/home/joanna/data/uniprot_dat/"
-SWISS_FASTA = "/home/joanna/data/uniprot_fasta/"
-SWISS_BLAST = "/home/joanna/data/uniprot_sprot.fasta"
+SWISS_DAT = "/home/joanna/data/swissprot_dat/uniprot_dat/"
+SWISS_FASTA = "/home/joanna/data/swiss_fasta/uniprot_fasta/"
+SWISS_BLAST = "/home/joanna/data/uniprot_sprot"
 PDB_BLAST = "/home/joanna/data/pdbfind.fasta"
 PDB_DIR = "/home/joanna/data/pdb/"
 DSSP_DIR = "/home/joanna/data/dssp/"
 PDBFIND = "/home/joanna/data/PDBFIND2.TXT"
 SCRIPT_PATH = os.path.realpath(__file__)
-KMAD = '/'.join(SCRIPT_PATH.split('/')[:-2] + ['kmad'])
 KMAD = '/home/joanna/cmbi/kmad/kmad'
 DALI = '/home/joanna/software/DaliLite_3.3/DaliLite'
 PDB_DALI = '/home/joanna/data/pdb/for_dali'
@@ -595,8 +594,8 @@ def structure_alignment_conf(fasta, output_conf, al_score):
 def annotate(fasta_in, output_name, output_conf, al_score):
     with open(fasta_in) as a:
         fasta = unwrap(a.read().splitlines())
-    # annotate_secondary_structure(fasta, output_name)
-    structure_alignment_conf(fasta, output_conf, al_score)
+    annotate_secondary_structure(fasta, output_name)
+    # structure_alignment_conf(fasta, output_conf, al_score)
 
 
 if __name__ == "__main__":

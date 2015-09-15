@@ -4,12 +4,11 @@
 
 #include <algorithm>
 
-typedef std::map<char, std::vector<double>> SimilarityScoresMap;
 namespace {
   static const std::vector<char> ALPHABET = {'A','R','N','D','C','Q','E','G',
                                              'H','I','L','K','M','F','P','S',
                                              'T','W','Y','V'};
-  static const SimilarityScoresMap BLOSUM = {
+  static const profile::SimilarityScoresMap BLOSUM = {
     {'A', { 4, -1, -2, -2,  0, -1, -1,  0, -2, -1, -1, -1, -1, -2, -1,  1,  0, -3, -2,  0}},
     {'R', {-1,  5,  0, -2, -3,  1,  0, -2,  0, -3, -2,  2, -1, -3, -2, -1, -1, -3, -2, -3}},
     {'N', {-2,  0,  6,  1, -3,  0,  0,  0,  1, -3, -3,  0, -2, -3, -2,  1,  0, -4, -2, -3}},
@@ -30,7 +29,7 @@ namespace {
     {'W', {-3, -3, -4, -4, -2, -2, -3, -2, -2, -3, -2, -3, -1,  1, -4, -3, -2, 11,  2, -3}},
     {'Y', {-2, -2, -2, -3, -2, -1, -2, -3,  2, -1, -1, -2, -1,  3, -3, -2, -2,  2,  7, -1}},
     {'V', { 0, -3, -3, -3, -1, -2, -2, -3, -3,  3,  1, -2,  1, -1, -2, -2,  0, -3, -1,  4}}};
-  static const SimilarityScoresMap DISORDER = {
+  static const profile::SimilarityScoresMap DISORDER = {
     {'A', { 9,  1,  2,  2,  1,  3,  2,  2,  1,  1,  1,  2,  0,  0,  3,  3,  4, -1,  0,  3}},
     {'R', { 1, 10,  1,  0,  1,  3,  1,  2,  3,  0,  0,  5, -1, -2,  0,  1,  1,  2, -1,  0}},
     {'N', { 2,  1, 11,  4,  1,  3,  2,  2,  3,  0, -1,  3, -1, -1,  1,  4,  3, -2,  1,  0}},
@@ -65,7 +64,7 @@ profile::ProfileMap profile::create_score_profile(
       ++i;
     }
   }
-  const SimilarityScoresMap* sim_scores;
+  const profile::SimilarityScoresMap* sim_scores;
   if (sbst_mat == "BLOSUM") {
     sim_scores = &BLOSUM;
   } else {
@@ -157,7 +156,98 @@ double profile::get_score(const profile::ProfileMap& p, int position,
 
 double profile::profile_score(const profile::ProfileMap& profile1,
                               const profile::ProfileMap& profile2,
-                              int pos1, int pos2)
+                              int pos1, int pos2, 
+                              const profile::SimilarityScoresMap* sim_scores)
 {
-  return 0.;
+  double result = 0;
+  int aa2_index = 0;
+  double pos1_sum = profile::calc_sum(profile1, pos1);
+  double pos2_sum = profile::calc_sum(profile2, pos2);
+  for (auto i = profile1.begin(); i != profile1.end(); ++i) {
+    char aa1 = i->first;
+    for (auto j = profile2.begin(); j != profile2.end(); ++j) {
+      result += (i->second[pos1] / pos1_sum) * (j->second[pos2] / pos2_sum) * sim_scores->at(aa1)[aa2_index];
+      aa2_index++; 
+    }
+  }
+  return result;
+}
+
+double profile::calc_sum(const profile::ProfileMap& profile, int pos) {
+  double sum = 0;
+  for (auto i = profile.begin(); i != profile.end(); ++i) {
+    sum += i->second[pos];
+  }
+  return sum;
+}
+
+// based on the two dummy sequences representing profile
+// alignment create a new profile
+profile::ProfileMap profile::make_new_profile(fasta::SequenceList sequences,
+    const profile::ProfileMap& profile1, const profile::ProfileMap& profile2)
+{
+  profile::ProfileMap new_profile;
+  for (unsigned pos = 0; pos < sequences.size(); ++pos) {
+    if (sequences[0].residues[pos].codon[0] != '-'
+        && sequences[1].residues[pos].codon[0] != '-') {
+      for (auto it = profile1.begin(); it != profile1.end(); ++it) {
+        double new_item = (it->second[pos] + profile2.at(it->first)[pos]) / 2;
+        new_profile.at(it->first).push_back(new_item);
+      }
+    } else if (sequences[0].residues[pos].codon[0] == '-') {
+      for (auto it = profile1.begin(); it != profile1.end(); ++it) {
+        double new_item = it->second[pos];
+        new_profile.at(it->first).push_back(new_item);
+      }
+    } else {
+      for (auto it = profile2.begin(); it != profile2.end(); ++it) {
+        double new_item = it->second[pos];
+        new_profile.at(it->first).push_back(new_item);
+      }
+    }
+  }
+  return new_profile;
+}
+
+profile::ProfileMap profile::make_scores(profile::ProfileMap& p,
+    const fasta::SequenceList& sequences,
+    const std::string& sbst_mat) 
+{
+  for (auto& occ: p) {
+    size_t i = 0;
+    for (auto& v: occ.second) {
+      occ.second[i] = v / sequences.size();
+      ++i;
+    }
+  }
+  const profile::SimilarityScoresMap* sim_scores;
+  if (sbst_mat == "BLOSUM") {
+    sim_scores = &BLOSUM;
+  } else {
+    sim_scores = &DISORDER;
+  }
+  for (unsigned i = 0; i < p['A'].size(); ++i) {
+    std::vector<double> score_column(ALPHABET.size(), 0); 
+    for (auto &prob: p) {
+      std::vector<double> sbst_column = sim_scores->at(prob.first);
+      for (size_t k = 0; k < sbst_column.size(); ++k) {
+        score_column[k] += sbst_column[k] * prob.second[i];
+      }
+    }
+    // replace the old column (with probs) with the new column (with scores)
+    for (size_t j = 0; j < ALPHABET.size(); ++j) {
+      p[ALPHABET[j]][i] = score_column[j];
+    }
+  }
+  p.at('B') = std::vector<double>(sequences[0].residues.size(), 0);
+  p.at('Z') = std::vector<double>(sequences[0].residues.size(), 0);
+  p.at('X') = std::vector<double>(sequences[0].residues.size(), 0);
+  for (size_t i = 0; i < sequences[0].residues.size(); ++i) {
+    for (auto& aa : ALPHABET ) {
+      p.at('X')[i] += p.at(aa)[i] / 20;
+    }
+    p.at('B')[i] = (p.at('D')[i] + p.at('N')[i]) / 2;
+    p.at('Z')[i] = (p.at('Q')[i] + p.at('E')[i]) / 2;
+  }
+  return p;
 }

@@ -64,8 +64,9 @@ void d_matrix::make_profile_lists(ProfileList& profiles,
       FeatureScores f_profile(sequence_data.feature_list, domain_modifier,
                               ptm_modifier, motif_modifier, strct_modifier,
                               sequence_data.probabilities);
-      profile::ProfileMap profile = profile::create_score_profile(
-          tmp_seq_list, sbst_mat);
+      // create score profile -> amino acid counts, and NOT probabilities 
+      // or scores
+      profile::ProfileMap profile = profile::create_profile(tmp_seq_list);
       std::vector<double> fake_identities = {1};
       if (!no_feat) {
         f_profile.update_scores(tmp_seq_list, f_set, fake_identities,
@@ -75,3 +76,48 @@ void d_matrix::make_profile_lists(ProfileList& profiles,
       f_profiles.push_back(f_profile);
   }
 }
+
+std::pair<int, int> d_matrix::find_closest_nodes(
+    const DistanceMatrix& dist_matrix) {
+  double max_val = 0;
+  std::pair<int, int> indexes = {0, 0};
+  for (unsigned int i = 0; i < dist_matrix.values.size(); ++i) {
+    for (unsigned int j = 0; j < i; ++j) {
+      if (dist_matrix.values[i][j] < max_val) {
+        max_val = dist_matrix.values[i][j];
+        indexes = {i, j};
+      }
+    }
+  }
+  return indexes;
+}
+
+
+d_matrix::DistanceMatrix d_matrix::update_matrix(
+    d_matrix::DistanceMatrix& dist_matrix, int node1, int node2,
+    const profile::ProfileMap& profile)
+ {
+  d_matrix::DistanceMatrix new_matrix;
+
+  std::vector<double> new_distances;
+  for (unsigned int i = 0; i < dist_matrix.values.size(); ++i) {
+    std::vector<double> row;
+    if ((signed)i != node1 and (signed)i != node2) {
+      for (unsigned int j = 0; j < dist_matrix.values.size(); ++j) {
+        if ((signed)j != node1 and (signed)j != node2) {
+          row.push_back(dist_matrix.values[i][j]);
+        }
+      }
+      double new_dist = 0.5 * (dist_matrix.values[i][node1] + dist_matrix.values[i][node2] - dist_matrix.values[node1][node2]);
+      // push profile
+
+      row.push_back(new_dist);
+      new_matrix.profiles.push_back(dist_matrix.profiles[i]);
+      new_distances.push_back(new_dist);
+    }
+    new_matrix.values.push_back(row);
+  }
+  new_matrix.values.push_back(new_distances);
+  new_matrix.profiles.push_back(profile);
+  return new_matrix;
+ }

@@ -107,13 +107,12 @@ namespace msa {
   /// align two profiles
   /// return dummy sequence to be able to constrcut a new profile from them
   ///
-  fasta::SequenceList align_pairwise(const profile::ProfileMap& profile1,
-                                     const profile::ProfileMap& profile2,
-                                     const FeatureScores& f_profile1,
-                                     const FeatureScores& f_profile2,
-                                     double gap_open_pen, double end_pen,
-                                     double gap_ext_pen, int codon_length,
-                                     const bool no_feat);
+  fasta::SequenceList align_pairwise(
+      const profile::ProfileMap& profile1, const profile::ProfileMap& profile2,
+      const FeatureScores& f_profile1, const FeatureScores& f_profile2,
+      double gap_open_pen, double end_pen, double gap_ext_pen,
+      int codon_length, const bool no_feat,
+      const profile::SimilarityScoresMap* sim_scores);
 
   ///
   /// calculates identity with the query sequence
@@ -150,6 +149,16 @@ namespace msa {
   ///
   std::vector<fasta::SequenceList> remove_gapcolumns(
       std::vector<fasta::SequenceList> alignment);
+
+  std::vector<fasta::SequenceList> tree_guided_msa(
+      const seq_data::SequenceData& sequence_data,
+      const f_config::FeatureSettingsMap& f_set,
+      double gap_open_pen, double gap_ext_pen,
+      double end_pen, double domain_modifier,
+      double motif_modifier, double ptm_modifier,
+      double strct_modifier,
+      int codon_length, const bool no_feat,
+      const std::string& sbst_mat);
 }
 
 #endif /* MSA_H */

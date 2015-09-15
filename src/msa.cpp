@@ -1,5 +1,5 @@
 #include "msa.h"
-
+#include "d_matrix.h"
 #include "feature_scores.h"
 #include "optimizer.h"
 #include "profile.h"
@@ -345,17 +345,16 @@ fasta::SequenceList msa::remove_gaps(const fasta::SequenceList& alignment) {
 
 //pairwise alignment of two profiles
 fasta::SequenceList msa::align_pairwise(
-                                        const profile::ProfileMap& profile1,
-                                        const profile::ProfileMap& profile2,
-                                        const FeatureScores& f_profile1,
-                                        const FeatureScores& f_profile2,
-                                        double gap_open_pen, double end_pen,
-                                        double gap_ext_pen, int codon_length,
-                                        const bool no_feat) {
+    const profile::ProfileMap& profile1, const profile::ProfileMap& profile2,
+    const FeatureScores& f_profile1, const FeatureScores& f_profile2,
+    double gap_open_pen, double end_pen, double gap_ext_pen, int codon_length,
+    const bool no_feat, const profile::SimilarityScoresMap* sim_scores)
+{
   int profile1_length = profile1.begin()->second.size();
   int profile2_length = profile2.begin()->second.size();
   ScoringMatrix scores(profile1_length, profile2_length,
-                       gap_open_pen, end_pen, gap_ext_pen, no_feat);
+                       gap_open_pen, end_pen, gap_ext_pen, no_feat,
+                       sim_scores);
   scores.calculate_scores(profile1, f_profile1, profile2, f_profile2,
                           codon_length);
   fasta::SequenceList alignment;
@@ -613,4 +612,64 @@ std::vector<fasta::SequenceList> msa::remove_gapcolumns(
     }
   }
   return result;
+}
+
+std::vector<fasta::SequenceList> msa::tree_guided_msa(
+    const seq_data::SequenceData& sequence_data,
+    const f_config::FeatureSettingsMap& f_set,
+    double gap_open_pen, double gap_ext_pen,
+    double end_pen, double domain_modifier,
+    double motif_modifier, double ptm_modifier,
+    double strct_modifier,
+    int codon_length, const bool no_feat,
+    const std::string& sbst_mat)
+{
+  const profile::SimilarityScoresMap* sim_scores;
+  if (sbst_mat == "BLOSUM") {
+    sim_scores = &substitution_matrix::BLOSUM;
+  } else {
+    sim_scores = &substitution_matrix::DISORDER;
+  }
+  d_matrix::DistanceMatrix dist_matrix = d_matrix::make_distance_matrix(
+      f_set, sequence_data, gap_open_pen, gap_ext_pen, end_pen,
+      domain_modifier, motif_modifier, ptm_modifier, strct_modifier, codon_length,
+      no_feat, sbst_mat);
+  while(dist_matrix.values.size() > 1) {
+    std::pair<int, int> nodes = d_matrix::find_closest_nodes(
+        dist_matrix);
+    int node1 = std::get<0>(nodes);
+    int node2 = std::get<1>(nodes);
+
+    // dummy seqs - sequences indicating where were the gaps are located in
+    // the profiles
+    fasta::SequenceList dummy_seqs = msa::align_pairwise(
+        dist_matrix.profiles[node1], dist_matrix.profiles[node2],
+        dist_matrix.feature_profiles[node1], dist_matrix.feature_profiles[node2],
+        gap_open_pen, end_pen, gap_ext_pen, codon_length, no_feat, sim_scores);
+
+    // based on the dummy sequences merge two profiles into one 
+   profile::ProfileMap new_profile = profile::make_new_profile(dummy_seqs,
+        dist_matrix.profiles[node1], dist_matrix.profiles[node2]);
+   // FeatureScores new_fscores = f_scores::make_new_fprofile(dummy_seqs,
+   //     dist_matrix.f_profiles[nodes[0]], dist_matrix.f_profiles[nodes[1]]);
+
+   d_matrix::update_matrix(dist_matrix, node1, node2, new_profile);
+  }
+  FeatureScores f_profile(sequence_data.feature_list, domain_modifier,
+                              ptm_modifier, motif_modifier, strct_modifier,
+                              sequence_data.probabilities);
+  int alignments_number = 0;
+  std::vector<double> identities(sequence_data.sequences.size(), 1);
+  double cutoff = 0;
+  std::cout << "ypppp"<< std::endl;
+  profile::ProfileMap final_profile = profile::make_scores(dist_matrix.profiles[0],
+      sbst_mat);
+  std::vector<fasta::SequenceList> alignment = msa::perform_msa_round_gapped(sequence_data,
+                                    sequence_data, final_profile,
+                                    f_profile, gap_open_pen,
+                                    end_pen, gap_ext_pen, cutoff, 
+                                    codon_length, identities, 
+                                    alignments_number, f_set,
+                                    alignment, 0, no_feat);
+  return alignment;
 }

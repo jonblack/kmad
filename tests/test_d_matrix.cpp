@@ -54,6 +54,12 @@ BOOST_AUTO_TEST_CASE(test_make_distance_matrix)
       domain_modifier, motif_modifier, ptm_modifier,
       strct_modifier, codon_length, no_feat, sbst_mat);
 
+  for (auto& row : d.values) {
+    for (auto& item : row) {
+      std::cout << item << " ";
+    }
+    std::cout << std::endl;
+  }
 }
 
 
