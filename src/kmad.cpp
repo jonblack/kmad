@@ -159,9 +159,10 @@ int main(int argc, char *argv[]) {
     }
      
     f_config::FeatureSettingsMap f_set;
+    std::map<std::string, double> probabilities;
     // if the '--conf' option is chosen parse the configuration file
     if (vm.count("conf") == 1) {
-      f_set = f_config::ConfParser::parse_conf_file(conf_file);
+      f_set = f_config::ConfParser::parse_conf_file(conf_file, probabilities);
     }
 
     fasta::FastaData fasta_data;
@@ -175,7 +176,7 @@ int main(int argc, char *argv[]) {
     bool gapped = false;
     // combine data from fasta with data from the config file -> seq_data
     seq_data::SequenceData sequence_data_plain = seq_data::process_fasta_data(
-        fasta_data, f_set, gapped);
+        fasta_data, f_set, gapped, probabilities);
     // perform the alignment
     std::vector<fasta::SequenceList> alignment;
     if (!refine) {
@@ -189,7 +190,7 @@ int main(int argc, char *argv[]) {
     } else if (!tree_guided) {
       bool gapped = true;
       seq_data::SequenceData sequence_data_alignment = seq_data::process_fasta_data(
-          fasta_data, f_set, gapped);
+          fasta_data, f_set, gapped, probabilities);
       if (refine_seq == 0) {
         refine_seq = fasta_data.sequences.size();
       }

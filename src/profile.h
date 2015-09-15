@@ -16,10 +16,10 @@ namespace profile {
                        int pos1, int pos2, const SimilarityScoresMap*);
   double calc_sum(const ProfileMap& profile, int pos);
 
-  ProfileMap make_new_profile(fasta::SequenceList sequences,
-    const fasta::SequenceList& sequences,
+  ProfileMap make_new_profile(const fasta::SequenceList& sequences,
     const ProfileMap& profile1, const ProfileMap& profile2);
-  ProfileMap make_scores(ProfileMap& p, const std::string& sbst_mat);
+  ProfileMap make_scores(ProfileMap& p, const fasta::SequenceList& sequences,
+                         const std::string& sbst_mat);
 }
 
 #endif /* PROFILE_H */

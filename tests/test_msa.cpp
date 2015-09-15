@@ -428,8 +428,9 @@ BOOST_AUTO_TEST_CASE(test_run_msa_with_feature_pattern) {
   bool gapped = false;
   fasta::FastaData fasta_data;
   fasta_data.sequences = s;
+  std::map<std::string, double> probabilities;
   seq_data::SequenceData sequence_data = seq_data::process_fasta_data(
-      fasta_data, f_set, gapped);
+      fasta_data, f_set, gapped, probabilities);
   int domain_modifier = 4;
   int motif_modifier = 3;
   int ptm_modifier = 10;
@@ -460,8 +461,10 @@ BOOST_AUTO_TEST_CASE(test_run_msa_with_feature_pattern) {
   }
   BOOST_CHECK_EQUAL_COLLECTIONS(expected.begin(), expected.end(),
                                 result.begin(), result.end());
-  f_set = f_config::ConfParser::parse_conf_file("tests/test_conffile_pattern.cfg");
-  sequence_data = seq_data::process_fasta_data(fasta_data, f_set, gapped);
+  f_set = f_config::ConfParser::parse_conf_file(
+      "tests/test_conffile_pattern.cfg", probabilities);
+  sequence_data = seq_data::process_fasta_data(
+      fasta_data, f_set, gapped, probabilities);
   alignment = msa::run_msa(sequence_data, f_set, gap_open_pen, gap_ext_pen,
                                 end_pen, domain_modifier, motif_modifier, 
                                 ptm_modifier, strct_modifier, codon_length,

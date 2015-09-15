@@ -662,8 +662,8 @@ std::vector<fasta::SequenceList> msa::tree_guided_msa(
   std::vector<double> identities(sequence_data.sequences.size(), 1);
   double cutoff = 0;
   std::cout << "ypppp"<< std::endl;
-  profile::ProfileMap final_profile = profile::make_scores(dist_matrix.profiles[0],
-      sbst_mat);
+  profile::ProfileMap final_profile = profile::make_scores(
+      dist_matrix.profiles[0], sequence_data.sequences, sbst_mat);
   std::vector<fasta::SequenceList> alignment = msa::perform_msa_round_gapped(sequence_data,
                                     sequence_data, final_profile,
                                     f_profile, gap_open_pen,

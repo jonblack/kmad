@@ -12,9 +12,10 @@ namespace seq_data {
     std::vector<std::string> feature_list;
   };
 
-  SequenceData process_fasta_data(const fasta::FastaData& fasta_data,
-                                  const f_config::FeatureSettingsMap& f_set,
-                                  bool gapped);
+  SequenceData process_fasta_data(
+      const fasta::FastaData& fasta_data, 
+      const f_config::FeatureSettingsMap& f_set, bool gapped,
+      const std::map<std::string, double>& probabilities);
   fasta::SequenceList remove_gaps(const fasta::SequenceList& sequences);
   FeatureNamesList make_feature_list(const fasta::SequenceList& sequences);
   void assign_feature_by_pattern(fasta::SequenceList& sequences,

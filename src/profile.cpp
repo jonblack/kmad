@@ -183,7 +183,8 @@ double profile::calc_sum(const profile::ProfileMap& profile, int pos) {
 
 // based on the two dummy sequences representing profile
 // alignment create a new profile
-profile::ProfileMap profile::make_new_profile(fasta::SequenceList sequences,
+profile::ProfileMap profile::make_new_profile(
+    const fasta::SequenceList& sequences,
     const profile::ProfileMap& profile1, const profile::ProfileMap& profile2)
 {
   profile::ProfileMap new_profile;

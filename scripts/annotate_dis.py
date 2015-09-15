@@ -287,7 +287,7 @@ def get_annotation_level(uni_features):
 
 
 # get PTM annotations from Uniprot's sequence data
-# 1-based!!
+# 0-based!!
 def parse_seq_data(seq_data, ptm_dict, seq_index):
     for i, lineI in enumerate(seq_data):
         if (lineI.startswith('FT')
@@ -303,7 +303,7 @@ def parse_seq_data(seq_data, ptm_dict, seq_index):
                 ptm_dict[ptm_name]['positions'][seq_index + 1].append(position)
 
 
-# output - sequences numbered 1-based (and so are positions)
+# output - sequences numbered 0-based (and so are positions)
 def find_ptm_sites(fasta_seqs_degapped, seq_ids):
     ptm_dict = {"ptm_phosph0": {'positions': {}},
                 "ptm_phosph1": {'positions': {}},
@@ -340,11 +340,11 @@ def find_ptm_sites(fasta_seqs_degapped, seq_ids):
             seq_data = get_uniprot_data(uni_id)
             parse_seq_data(seq_data, ptm_dict, i)
         predicted_phosph = run_netphos(fasta_seqs_degapped[(i * 2) + 1])
-        ptm_dict["ptm_phosphP"]['positions'][(i * 2) + 1] = predicted_phosph
+        ptm_dict["ptm_phosphP"]['positions'][i + 1] = predicted_phosph
     return ptm_dict
 
 
-# output - sequences numbered 1-based (and so are positions)
+# output - sequences numbered 0-based (and so are positions)
 def get_annotated_motifs(seq_ids):
     motif_dict = {}
     # get annotated motifs first
@@ -364,9 +364,9 @@ def get_annotated_motifs(seq_ids):
                         if elm_id not in motif_dict:
                             motif_dict[elm_id] = {'prob': 1.0,
                                                   'positions': {}}
-                        if i not in motif_dict[elm_id]['positions']:
-                            motif_dict[elm_id]['positions'][i] = []
-                        motif_dict[elm_id]['positions'][i].extend(
+                        if i + 1 not in motif_dict[elm_id]['positions']:
+                            motif_dict[elm_id]['positions'][i + 1] = []
+                        motif_dict[elm_id]['positions'][i + 1].extend(
                             range(start, end + 1))
             except (urllib2.HTTPError,  urllib2.URLError,
                     SocketError, BadStatusLine):
@@ -378,7 +378,7 @@ def get_annotated_motifs(seq_ids):
 # TODO: implement filtering in structured regions
 def get_predicted_motifs(sequences, elm_db, filter_motifs,):
     motif_dict = {}
-    for i, seq_i in enumerate(sequences):
+    for i, seq_i in enumerate(sequences[1::2]):
         for elm_id in elm_db.keys():
             slim_j = elm_db[elm_id]
             reg = slim_j["comp_reg"]
@@ -386,12 +386,12 @@ def get_predicted_motifs(sequences, elm_db, filter_motifs,):
                 m_sp = (match.span())
                 prob = 1 + 1/math.log(slim_j["prob"], 10)
                 start = m_sp[0] + 1
-                end = m_sp[1]
+                end = m_sp[1] + 1
                 if elm_id not in motif_dict:
                     motif_dict[elm_id] = {"prob": prob, "positions": {}}
-                if i not in motif_dict[elm_id]["positions"]:
-                    motif_dict[elm_id]["positions"][i] = []
-                motif_dict[elm_id]["positions"][i].extend(range(start, end + 1))
+                if i + 1 not in motif_dict[elm_id]["positions"]:
+                    motif_dict[elm_id]["positions"][i + 1] = []
+                motif_dict[elm_id]["positions"][i + 1].extend(range(start, end))
     return motif_dict
 
 
@@ -422,7 +422,6 @@ def annotate(inname, outname):
         fasta_seqs_degapped = remove_gaps(fasta_seqs)
     else:
         fasta_seqs_degapped = fasta_seqs[:]
-    print fasta_seqs_degapped
     seq_ids = find_uniprot_ids(fasta_seqs_degapped)
     ptm_sites = find_ptm_sites(fasta_seqs_degapped, seq_ids)
     motifs = find_motifs(fasta_seqs_degapped, seq_ids, elm_db)
