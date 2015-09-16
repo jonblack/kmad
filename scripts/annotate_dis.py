@@ -253,11 +253,11 @@ def get_ptm_type(txt_line):
     elif "CARBOHYD" in txt_line and "N-linked" in txt_line:
         ptm_type = 'Nglyc'
     elif "MOD_RES" in txt_line and "acetyl" in txt_line:
-        ptm_type = 'acetyl'
+        ptm_type = 'acet'
     elif "MOD_RES" in txt_line and "hydroxy" in txt_line:
-        ptm_type = 'hydrox'
+        ptm_type = 'hydroxy'
     elif "MOD_RES" in txt_line and "methyl" in txt_line:
-        ptm_type = 'meth'
+        ptm_type = 'methyl'
     else:
         ptm_found = False
         ptm_type = ""
