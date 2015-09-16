@@ -54,15 +54,16 @@ from time import localtime
 from Bio import PDB
 
 
-SWISS_DAT = "/home/joanna/data/swissprot_dat/uniprot_dat/"
-SWISS_FASTA = "/home/joanna/data/swiss_fasta/uniprot_fasta/"
-SWISS_BLAST = "/home/joanna/data/uniprot_sprot"
+SWISS_DAT = "/home/joanna/data/uniprot_dat/"
+SWISS_FASTA = "/home/joanna/data/uniprot_fasta/"
+SWISS_BLAST = "/home/joanna/data/uniprot_sprot.fasta"
 PDB_BLAST = "/home/joanna/data/pdbfind.fasta"
 CHAIN_PDB_DIR = "/home/joanna/data/chain_pdbs/"
 PDB_DIR = "/home/joanna/data/pdb/"
 DSSP_DIR = "/home/joanna/data/dssp/"
 PDBFIND = "/home/joanna/data/PDBFIND2.TXT"
 SCRIPT_PATH = os.path.realpath(__file__)
+KMAD = '/'.join(SCRIPT_PATH.split('/')[:-2] + ['kmad'])
 KMAD = '/home/joanna/cmbi/kmad/kmad'
 DALI = '/home/joanna/software/DaliLite_3.3/DaliLite'
 PDB_DALI = '/home/joanna/data/pdb/for_dali'
@@ -494,9 +495,11 @@ def mk_strct_al_dali(strct_data1, strct_data2):
                            "mol1A.html", "mol1B.txt", "mol1B.html",
                            "index.html", "summary.txt", "pdb90.html",
                            tmp_path1, tmp_path2]
-        # remove_files(files_to_remove)
-    except subprocess.CalledProcessError as e:
-        print "Error: {}".format(e.output)
+        remove_files(files_to_remove)
+        # except subprocess.CalledProcessError as e:
+        #    print "Error: {}".format(e.output)
+    except:
+        print "DALI failed"
     return result
 
 
@@ -582,6 +585,14 @@ def write_conf_file(query_seq, eq_positions, output_conf, al_score):
     out.close()
 
 
+def retrieve_strct_al(strct_data1, strct_data2, alignments):
+    key = strct_data1['id'] + strct_data2['id']
+    if key in alignments.keys():
+        return alignments[key]
+    else:
+        return {}
+
+
 def structure_alignment_conf(fasta, output_conf, al_score):
     with open(PDB_HEADERS) as a:
         pdb_headers = a.read().splitlines()
@@ -589,12 +600,18 @@ def structure_alignment_conf(fasta, output_conf, al_score):
     query_sequence = fasta[1]
     query_strct_data = get_structure_data(query_sequence, pdb_headers, header)
     eq_positions = {}
+    strct_alns = {}
     for i in range(2, len(fasta)):
         if not fasta[i].startswith('>'):
             strct_data = get_structure_data(fasta[i], pdb_headers, fasta[i - 1])
             eq_seq1_seq2 = {}
             if strct_data['id']:
-                strct_al = mk_strct_al_dali(query_strct_data, strct_data)
+                strct_al = retrieve_strct_al(query_strct_data, strct_data,
+                                             strct_alns)
+                if not strct_al:
+                    strct_al = mk_strct_al_dali(query_strct_data, strct_data)
+                    aln_key = query_strct_data['id'] + strct_data['id']
+                    strct_alns[aln_key] = strct_al
                 eq_seq1_seq2 = find_equivalent_positions(
                     query_strct_data['positions_map'],
                     strct_data['positions_map'],
