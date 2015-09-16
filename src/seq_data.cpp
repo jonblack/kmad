@@ -6,9 +6,15 @@
 
 seq_data::SequenceData seq_data::process_fasta_data(
     const fasta::FastaData& fasta_data, 
-    const f_config::FeatureSettingsMap& f_set, bool gapped) {
+    const f_config::FeatureSettingsMap& f_set, bool gapped, 
+    const std::map<std::string, double>& probabilities) {
   seq_data::SequenceData s;
-  s.probabilities = fasta_data.probabilities;
+  // probabilities are a concatenation of probs from fasta data and probs
+  // from the config file (if there are key repeats - thereshoudl be none -
+  // then the one from the config file is kept)
+  s.probabilities = probabilities;
+  s.probabilities.insert(fasta_data.probabilities.begin(),
+                         fasta_data.probabilities.end());
   s.sequences = fasta_data.sequences;
   if (!gapped) {
     s.sequences = remove_gaps(s.sequences);

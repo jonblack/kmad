@@ -93,9 +93,9 @@ BOOST_AUTO_TEST_CASE(test_seq_data)
                                             "domain_aa"}; 
 
   bool gapped = true;
-  seq_data::SequenceData test_result = seq_data::process_fasta_data(test_data,
-                                                                    test_map,
-                                                                    gapped);
+  std::map<std::string, double> probabilities;
+  seq_data::SequenceData test_result = seq_data::process_fasta_data(
+      test_data, test_map, gapped, probabilities);
 
   BOOST_CHECK_EQUAL_COLLECTIONS(expected_feature_list.begin(), 
                                 expected_feature_list.end(),

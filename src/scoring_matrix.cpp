@@ -6,15 +6,37 @@
 #include <boost/filesystem.hpp>
 
 
-ScoringMatrix::ScoringMatrix(int s1_size,int s2_size, double pen,
-                             double end_pen, double gap_ext_pen,
-                             const bool no_feat)
+ScoringMatrix::ScoringMatrix(
+    int s1_size,int s2_size, double pen, double end_pen, double gap_ext_pen,
+    const bool no_feat)
 : m_i_length(s1_size),
   m_j_length(s2_size),
   m_gap_opening(pen),
   m_gap_extension(gap_ext_pen),
   m_end_pen(end_pen),
   m_no_feat(no_feat)
+{
+  //creates a row for the scoring matrices of length m_j_length
+  //(length of the jth sequence + 1)
+  ScoringMatrixRow row(m_j_length + 1,0);
+  //creates a vector of vectors 'row', of length m_i_length+1
+  //(length of the ith sequence +1)
+  m_matrix_v.assign(m_i_length + 1, row);
+  m_matrix_g.assign(m_i_length + 1, row);
+  m_matrix_h.assign(m_i_length + 1, row);
+}
+
+
+ScoringMatrix::ScoringMatrix(
+    int s1_size,int s2_size, double pen, double end_pen, double gap_ext_pen,
+    const bool no_feat, const profile::SimilarityScoresMap* sim_scores)
+: m_i_length(s1_size),
+  m_j_length(s2_size),
+  m_gap_opening(pen),
+  m_gap_extension(gap_ext_pen),
+  m_end_pen(end_pen),
+  m_no_feat(no_feat),
+  m_sim_scores(sim_scores)
 {
   //creates a row for the scoring matrices of length m_j_length
   //(length of the jth sequence + 1)
@@ -232,4 +254,170 @@ fasta::SequenceList ScoringMatrix::backtrace_alignment_path(
 
 SingleScoringMatrix ScoringMatrix::get_V_matrix() {
   return m_matrix_v;
+}
+fasta::SequenceList ScoringMatrix::backtrace_alignment_path(
+    const profile::ProfileMap& profile1,
+    const FeatureScores& f_profile1,
+    const profile::ProfileMap& profile2,
+    const FeatureScores& f_profile2,
+    int codon_length)
+{
+  fasta::SequenceList s;
+  //creating polyA pseudoSequence representing the profile,
+  //to know later where are the gaps in the profile
+  fasta::Residue ala('A' + std::string(codon_length - 1, 'A'), {});
+  fasta::Residue gap_residue('-' + std::string(codon_length - 1, 'A'), {});
+  fasta::Sequence profile_seq1;
+  fasta::Sequence profile_seq2;
+  profile_seq1 = fasta::make_sequence(profile1.begin()->second.size(),
+                                      ala);
+  profile_seq2 = fasta::make_sequence(profile2.begin()->second.size(),
+                                      ala);
+  // s2.insert(s2.begin(), gap_residue);
+  fasta::Sequence new_s1;
+  fasta::Sequence new_s2;
+  int i = profile_seq2.residues.size();
+  int j = profile_seq1.residues.size();
+  //if bestScore isn't in the lower right corner, then add gaps
+  //to new_s1 or new_s2
+  ValueCoords best_score = find_best_score();
+  if (best_score[0] != (signed)m_matrix_v.size()-1
+      || best_score[1] != (signed)m_matrix_v[0].size()-1) {
+    i = best_score[0];
+    j = best_score[1];
+    for (int k = profile_seq1.residues.size(); k > i; --k) {
+      new_s1.residues.push_back(profile_seq1.residues[k - 1]);
+      new_s2.residues.push_back(gap_residue);
+    }
+    for (int k = profile_seq2.residues.size(); k > j; --k) {
+      new_s2.residues.push_back(profile_seq2.residues[k - 1]);
+      new_s1.residues.push_back(gap_residue);
+    }
+  }
+  std::string current_matrix = "V";
+
+  assert(m_matrix_v.size() == m_matrix_g.size());
+  assert(m_matrix_v.size() == m_matrix_h.size());
+  fasta::Residue new_res1;
+  fasta::Residue new_res2;
+
+  //trace back the matrix
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && current_matrix == "V") {  //match/mismatch
+      new_res1 = profile_seq1.residues[i - 1];
+      new_res2 = profile_seq2.residues[j - 1];
+      // double profile_score = profile.at(
+      //     sequence.residues[j - 1].codon[0])[i - 1];
+      double profile_score = profile::profile_score(profile1, profile2,
+                                                    int(i - 1), int(j - 1),
+                                                    m_sim_scores);
+      double feature_score = 0;
+      // if (!m_no_feat) {
+      //   for (auto& feat_name : sequence.residues[j - 1].features) {
+      //     feature_score += f_profile.get_score(feat_name, i - 1); 
+      //   }
+      // }
+      double final_score = profile_score + feature_score;
+      if (m_matrix_v[i][j] != m_matrix_v[i-1][j-1] + final_score) {
+        if (i > 0 && j > 0
+            && compare_doubles::is_equal(m_matrix_v[i][j],
+                                         m_matrix_g[i-1][j-1] + final_score)) {
+          current_matrix = "G";
+        } else if (i > 0 && j > 0
+                   && compare_doubles::is_equal(m_matrix_v[i][j],
+                                                m_matrix_h[i-1][j-1]
+                                                + final_score)) {
+          current_matrix = "H";
+        }
+      }
+      --i;
+      --j;
+    } else if (j > 0 && current_matrix == "G") {  //gap in seq2
+      new_res1 = gap_residue;
+      new_res2 = profile_seq2.residues[j - 1];
+      if (compare_doubles::is_equal(m_matrix_g[i][j],
+                                    m_matrix_v[i][j - 1] + m_gap_opening)) {
+        current_matrix = "V";
+      }
+      else if (compare_doubles::is_equal(m_matrix_g[i][j],
+                                         m_matrix_h[i][j - 1]
+                                         + m_gap_opening)) {
+        current_matrix = "H";
+      }
+      --j;
+    } else if (i > 0 && current_matrix == "H") {  //gap in profile
+      new_res1 = profile_seq1.residues[i - 1];
+      new_res2 = gap_residue;
+      if (compare_doubles::is_equal(m_matrix_h[i][j],
+                                    m_matrix_v[i - 1][j] + m_gap_opening)) {
+        current_matrix = "V";
+      }
+      else if (compare_doubles::is_equal(m_matrix_h[i][j],
+                                         m_matrix_g[i - 1][j]
+                                         + m_gap_opening)) {
+        current_matrix = "G";
+      }
+      --i;
+    }
+    new_s1.residues.push_back(new_res1);
+    new_s2.residues.push_back(new_res2);
+  }
+  //need to reverse the sequences, because tracing back the alignment goes
+  //from the end to the beginning
+  std::reverse(new_s1.residues.begin(), new_s1.residues.end());
+  std::reverse(new_s2.residues.begin(), new_s2.residues.end());
+  return {new_s1, new_s2};
+}
+void ScoringMatrix::calculate_scores(const profile::ProfileMap& profile1,
+                                     const FeatureScores& f_profile1,
+                                     const profile::ProfileMap& profile2,
+                                     const FeatureScores& f_profile2,
+                                     int codon_length)
+{
+  assert(m_matrix_v.size() == m_matrix_g.size());
+  assert(m_matrix_v.size() == m_matrix_h.size());
+
+  for (unsigned int i = 1; i < m_matrix_v.size(); ++i) {
+    m_matrix_v[i][0] = -10000000; //=== - infinity
+    m_matrix_h[i][0] = i * m_end_pen;
+    m_matrix_g[i][0] = -10000000;
+  }
+  for (unsigned int i = 1; i < m_matrix_v[0].size(); ++i) {
+    m_matrix_v[0][i] = -10000000;
+    m_matrix_h[0][i] = -10000000;
+    m_matrix_g[0][i] = i * m_end_pen;
+  }
+
+  double score1, score2, score3 = 0;
+  for (size_t i = 1; i < m_matrix_v.size(); ++i) {
+    for (size_t j = 1; j < m_matrix_v[i].size(); ++j) {
+      double profile_score = profile::profile_score(profile1, profile2,
+                                                    int(i - 1), int(j - 1),
+                                                    m_sim_scores);
+      double feature_score = 0;
+      // if (!m_no_feat) {
+      //     feature_score += f_profile1.profile_score(f_profile2,
+      //                                               int(i - 1), int(j - 1)); 
+      // }
+
+      score1 = m_matrix_v[i-1][j-1];
+      score2 = m_matrix_g[i-1][j-1];
+      score3 = m_matrix_h[i-1][j-1];
+
+      m_matrix_v[i][j] = std::max<double>(score1,
+        std::max<double>(score2, score3)) + profile_score + feature_score;
+      ///G
+      score1 = m_matrix_v[i-1][j] + m_gap_opening;
+      score2 = m_matrix_h[i-1][j] + m_gap_extension;
+      score3 = m_matrix_g[i-1][j] + m_gap_opening;
+      m_matrix_h[i][j] = std::max<double>(score1, std::max<double>(score2,
+                                                                   score3));
+      ///H
+      score1 = m_matrix_v[i][j-1] + m_gap_opening;
+      score2 = m_matrix_g[i][j-1] + m_gap_extension;
+      score3 = m_matrix_h[i][j-1] + m_gap_opening;
+      m_matrix_g[i][j] = std::max<double>(score1, std::max<double>(score2,
+                                                                   score3));
+    }
+  }
 }

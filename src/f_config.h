@@ -56,10 +56,12 @@ namespace f_config
       /// settings - calls process_config(...) and process_settings(...)
       ///
       static FeatureSettingsMap parse_conf_file(
-          const std::string& filename);
+          const std::string& filename,
+          std::map<std::string, double>& probabilities);
     private:
       static RawFeatureSettingsMap process_config(
-          const libconfig::Config& cnfg);
+          const libconfig::Config& cnfg,
+          std::map<std::string, double>& probabilities);
       ///
       /// converts a map of RawFeatureSettings structs to FeatureSettings
       /// by combining the different add_* and subtract_* elements

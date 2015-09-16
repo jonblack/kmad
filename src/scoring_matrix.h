@@ -23,12 +23,23 @@ public:
   ScoringMatrix(int profile_length, int sequence_length,
                 double gap_open_pen, double end_pen,
                 double gap_ext_pen, const bool no_feat);
+
+
+  ScoringMatrix(int profile_length, int sequence_length,
+                double gap_open_pen, double end_pen,
+                double gap_ext_pen, const bool no_feat,
+                const profile::SimilarityScoresMap* sim_scores);
   ///
   /// Fills in the scoring matrices m_matrix_v, m_matrix_g, m_matrix_h
   ///
   void calculate_scores(const fasta::Sequence& sequence,
                         const profile::ProfileMap& profile,
                         const FeatureScores& f_profile, int codon_length);
+  void calculate_scores(const profile::ProfileMap& profile1,
+                        const FeatureScores& f_profile1,
+                        const profile::ProfileMap& profile2,
+                        const FeatureScores& f_profile2,
+                        int codon_length);
   ///
   /// traces back the alignment path in the scoring matrices
   ///
@@ -36,6 +47,12 @@ public:
       const fasta::Sequence& sequence, 
       const profile::ProfileMap& profile,
       const FeatureScores& f_profile,
+      int codon_length);
+  fasta::SequenceList backtrace_alignment_path(
+      const profile::ProfileMap& profile1,
+      const FeatureScores& f_profile1,
+      const profile::ProfileMap& profile2,
+      const FeatureScores& f_profile2,
       int codon_length);
   SingleScoringMatrix get_V_matrix();
 private:
@@ -50,6 +67,7 @@ private:
   double m_gap_extension;
   double m_end_pen;
   bool m_no_feat;
+  const profile::SimilarityScoresMap* m_sim_scores;
   SingleScoringMatrix m_matrix_v, m_matrix_g, m_matrix_h;
 };
 

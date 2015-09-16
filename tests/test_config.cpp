@@ -21,7 +21,8 @@ BOOST_AUTO_TEST_CASE(test_config)
   const char* filename = "tests/test_conf_file.cfg";
 
   f_config::FeatureSettingsMap test_result;
-  test_result = f_config::ConfParser::parse_conf_file(filename);
+  std::map<std::string, double> probs;
+  test_result = f_config::ConfParser::parse_conf_file(filename, probs);
 
   std::string feat_name = "USR_feature1";
   BOOST_CHECK(test_result.find(feat_name) != test_result.end());
@@ -52,13 +53,13 @@ BOOST_AUTO_TEST_CASE(test_config)
   std::string pattern = "KR.";
   BOOST_CHECK_EQUAL(result_pattern, pattern);
 
-  BOOST_CHECK_THROW(f_config::ConfParser::parse_conf_file(filename), 
+  BOOST_CHECK_THROW(f_config::ConfParser::parse_conf_file(filename, probs), 
                     lcg::FileIOException);
   filename = "tests/test_conf_file_wrongformat.cfg";
-  BOOST_CHECK_THROW(f_config::ConfParser::parse_conf_file(filename), 
+  BOOST_CHECK_THROW(f_config::ConfParser::parse_conf_file(filename, probs), 
                     lcg::ParseException);
   filename = "tests/test_conf_file_settingnotfound.cfg";
-  BOOST_CHECK_THROW(f_config::ConfParser::parse_conf_file(filename), 
+  BOOST_CHECK_THROW(f_config::ConfParser::parse_conf_file(filename, probs), 
                     lcg::SettingNotFoundException);
 
 }

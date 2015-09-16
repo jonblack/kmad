@@ -6,7 +6,8 @@
 namespace lcg = libconfig;
 
 f_config::FeatureSettingsMap f_config::ConfParser::parse_conf_file(
-    const std::string& filename) {
+    const std::string& filename,
+    std::map<std::string, double>& probabilities) {
   lcg::Config cnfg;
   try
   {
@@ -21,13 +22,14 @@ f_config::FeatureSettingsMap f_config::ConfParser::parse_conf_file(
               << " - " << pex.getError() << std::endl;
     throw;
   }
-  f_config::RawFeatureSettingsMap raw_map = process_config(cnfg);
+  f_config::RawFeatureSettingsMap raw_map = process_config(cnfg,
+                                                           probabilities);
   return process_settings(raw_map);
 }
 
 
 f_config::RawFeatureSettingsMap f_config::ConfParser::process_config(
-    const lcg::Config& cnfg) {
+    const lcg::Config& cnfg, std::map<std::string, double>& probabilities) {
   f_config::RawFeatureSettingsMap feat_config;
   try
   {
@@ -40,38 +42,50 @@ f_config::RawFeatureSettingsMap f_config::ConfParser::process_config(
       std::string name;
       if (!feature.lookupValue("name", name))
         continue;
-      feature.lookupValue("tag", feat_set.tag);
-      bool found_add_score = feature.lookupValue("add_score",
-                                                 feat_set.add_score);
-      bool found_sbtrct_score = feature.lookupValue("subtract_score",
-                                                    feat_set.subtract_score);
-      if (!(found_add_score || found_sbtrct_score))
-        continue;
-      feature.lookupValue("pattern", feat_set.pattern);
+      if (name.substr(0, 5) != "motif"
+          && name.substr(0, 6) != "domain"
+          && name.substr(0, 3) != "ptm") {
+        feature.lookupValue("tag", feat_set.tag);
+        bool found_add_score = feature.lookupValue("add_score",
+                                                   feat_set.add_score);
+        bool found_sbtrct_score = feature.lookupValue("subtract_score",
+                                                      feat_set.subtract_score);
+        if (!(found_add_score || found_sbtrct_score))
+          continue;
+        feature.lookupValue("pattern", feat_set.pattern);
 
-      lcg::Setting& add_features_set = feature["add_features"];
-      for (int j = 0; j < add_features_set.getLength(); ++j) {
-        feat_set.add_features.push_back(add_features_set[j]);
+        lcg::Setting& add_features_set = feature["add_features"];
+        for (int j = 0; j < add_features_set.getLength(); ++j) {
+          feat_set.add_features.push_back(add_features_set[j]);
+        }
+        lcg::Setting& add_tags_set = feature["add_tags"];
+        for (int j = 0; j < add_tags_set.getLength(); ++j) {
+          feat_set.add_tags.push_back(add_tags_set[j]);
+        }
+        lcg::Setting& add_exceptions_set = feature["add_exceptions"];
+        for (int j = 0; j < add_exceptions_set.getLength(); ++j) {
+          feat_set.add_exceptions.push_back(add_exceptions_set[j]);
+        }
+        lcg::Setting& subtract_features_set = feature["subtract_features"];
+        for (int j = 0; j < subtract_features_set.getLength(); ++j) {
+          feat_set.subtract_features.push_back(subtract_features_set[j]);
+        }
+        lcg::Setting& subtract_tags_set = feature["subtract_tags"];
+        for (int j = 0; j < subtract_tags_set.getLength(); ++j) {
+          feat_set.subtract_tags.push_back(subtract_tags_set[j]);
+        }
+        lcg::Setting& subtract_exceptions_set = feature["subtract_exceptions"];
+        for (int j = 0; j < subtract_exceptions_set.getLength(); ++j) {
+          feat_set.subtract_exceptions.push_back(subtract_exceptions_set[j]);
+        }
       }
-      lcg::Setting& add_tags_set = feature["add_tags"];
-      for (int j = 0; j < add_tags_set.getLength(); ++j) {
-        feat_set.add_tags.push_back(add_tags_set[j]);
-      }
-      lcg::Setting& add_exceptions_set = feature["add_exceptions"];
-      for (int j = 0; j < add_exceptions_set.getLength(); ++j) {
-        feat_set.add_exceptions.push_back(add_exceptions_set[j]);
-      }
-      lcg::Setting& subtract_features_set = feature["subtract_features"];
-      for (int j = 0; j < subtract_features_set.getLength(); ++j) {
-        feat_set.subtract_features.push_back(subtract_features_set[j]);
-      }
-      lcg::Setting& subtract_tags_set = feature["subtract_tags"];
-      for (int j = 0; j < subtract_tags_set.getLength(); ++j) {
-        feat_set.subtract_tags.push_back(subtract_tags_set[j]);
-      }
-      lcg::Setting& subtract_exceptions_set = feature["subtract_exceptions"];
-      for (int j = 0; j < subtract_exceptions_set.getLength(); ++j) {
-        feat_set.subtract_exceptions.push_back(subtract_exceptions_set[j]);
+      else if (name.substr(0, 5) == "motif") {
+        bool found_add_score = feature.lookupValue("add_score",
+                                                   probabilities[name]);
+        if (!found_add_score) {
+          std::cout << "Motif " << name << " has no probability assigned,"
+            << " setting it to 0" << std::endl;
+        }
       }
       lcg::Setting& positions_set = feature["positions"];
       for (int j = 0; j <  positions_set.getLength(); ++j) {
@@ -112,6 +126,10 @@ f_config::FeatureSettingsMap f_config::ConfParser::process_settings(
      /// filter out the features from 'add_features' and 'subtract_features'
      /// that have no settings (are not in keys in the RawFetaureSettings map)
      ///
+     if (feat_it->first.substr(0, 5) != "motif"
+         && feat_it->first.substr(0, 6) != "domain"
+         && feat_it->first.substr(0, 3) != "ptm") {
+
      for (auto& feat_name : feat_it->second.add_features) {
        if (raw_map.find(feat_name) != raw_map.end()) {
          processed_settings.add_features.push_back("USR_"+ feat_name);
@@ -166,6 +184,9 @@ f_config::FeatureSettingsMap f_config::ConfParser::process_settings(
      /// add the feature to the new map 
      ///
      processed_map["USR_" + feat_it->first] = processed_settings;
+     } else {
+      processed_map[feat_it->first] = processed_settings;
+     }
   }
   return processed_map;
 }
