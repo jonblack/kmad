@@ -1,13 +1,68 @@
 #!/usr/bin/python
-from itertools import cycle, islice
-from sys import argv
-# usage: ./convertEncodedToColoured.py infile outfile codon_length mode
-# modes:
-#   0 - colouring without features
-#   1 - motifs colouring
-#   2 - domains colouring
-#   3 - phosphorylations colouring
-#   4 - create multiple files in different colouring modes
+import argparse
+import re
+
+from jsonlibconfig import decoder
+
+
+ELM_DB = "/home/joanna/data/elm_complete.txt"
+
+
+def parse_elm_db():
+    with open(ELM_DB) as a:
+        slim_classes = a.read().splitlines()
+    elm_motifs = dict()
+    for i in slim_classes:
+        line_i = i.split()
+        elm_id = 'motif_' + line_i[0]
+        elm_motifs[elm_id] = {"prob": float(line_i[2]), "GO": line_i[3:],
+                              "regex": line_i[1],
+                              "comp_reg": re.compile(line_i[1])}
+    return elm_motifs
+
+
+# takes 0-based seiq number and position
+# position - position in the sequence without gaps
+# returns position in the aligned sequence
+def get_real_pos(alignment, seq, position):
+    counter = 0
+    real_pos = -1
+    aln_sequence = alignment[seq]['sequence']
+    for i in range(len(aln_sequence)):
+        if aln_sequence[i]['aa'] != '-':
+            counter += 1
+        if position == counter - 1:
+            real_pos = i
+            break
+    return real_pos
+
+
+def parse_config(alignment, config):
+    config = re.sub('\[', '(', re.sub('\]', ')', config))
+    conf_dict = decoder.loads(config)['feature_settings']['usr_features']
+    for feature in conf_dict:
+        if feature['positions'] != 'empty':
+            # stupid jsonlibconfig turns a list with one element into that
+            # element - e.g. list with one int becomes an int,
+            # so the type checks are to handle these situations
+            if type(feature['positions']) == dict:
+                positions = [feature['positions']]
+            elif type(feature['positions']) == list:
+                positions = feature['positions']
+            for seq in positions:
+                if seq['pos'] != 'empty':
+                    if type(seq['pos']) == list:
+                        pos = seq['pos']
+                    elif type(seq['pos']) == int:
+                        pos = [seq['pos']]
+                    for i in pos:
+                        real_pos = get_real_pos(
+                            alignment, seq['seq'] - 1, i - 1)
+                        # add this feature to sequence number seq['seq'] -1
+                        # on position real_pos
+                        alignment[seq['seq'] - 1][
+                            'sequence'][real_pos]['features'].append(
+                            feature['name'])
 
 
 def unwrap(alignment):
@@ -16,110 +71,46 @@ def unwrap(alignment):
         if i.startswith('>'):
             new.append(i)
             new.append("")
-        elif not i.startswith("## PROB"):
-            new[-1] += i
         else:
-            break
+            new[-1] += i
     return new
 
-def srepeat(string, n):
-   return ''.join(islice(cycle(string), n))
+
+def process_alignment(infile):
+    alignment = []
+    seq_dict = {}
+    for i in range(0, len(infile), 2):
+        seq_dict['header'] = infile[i]
+        seq_dict['sequence'] = [{'aa': res_j, 'features': []}
+                                for res_j in infile[i + 1]]
+        alignment.append(seq_dict)
+    return alignment
 
 
-def beginHTMLdocument(filename):
-    template = open("/home/joanna/Documents/scripts/regcol_template.html").read()
-    filename.write(template)
+def write_html():
+    pass
+
+def filter_conserved_motifs(alignment):
+    for res_i in
 
 
-def endHTMLdocument(filename):
-    htmlCode='</doc>\n</pre>\n</body>\n</html>\n'
-    filename.write(htmlCode)
+def convert_to_html(in_fasta, in_cfg, out_html, mode):
+    with open(in_fasta) as a:
+        infile = unwrap(a.read().splitlines())
+    with open(in_cfg) as a:
+        config = a.read()
+    elm_db = parse_elm_db()
+    alignment = process_alignment(infile)
+    parse_config(alignment, config)
+    filter_conserved_motifs(alignment, elm_db)
+    # write_html(alignment_dict, out_html)
 
 
-def createHTMLsequence(sequence, codon_length, mode):
-    htmlSequence = []
-    for i,charI in enumerate(sequence):
-        if i%codon_length == 0:
-            if "-" != charI and " " != charI:
-                if mode == 0: # 0 mode means colouring without features
-                        htmlSequence+=["<span class=feat%s>%s</span>" % (charI.upper(),charI)]
-                elif codon_length == 7:
-                    if mode == 2 and sequence[i+2:i+4] != "AA":
-                        htmlSequence+=["<span class=featDOMAIN%s>%s</span>" % (sequence[i+2:i+4],charI)]
-                    elif mode == 1 and sequence[i+5:i+7] != "AA" :
-                        htmlSequence+=["<span class=featMOTIF%s>%s</span>" % (sequence[i+5:i+7],charI)]
-                    elif mode == 3 and sequence[i+4] != 'A':
-                        featclass = ptm_dict[sequence[i+4]]
-                        htmlSequence+=["<span class=feat{}>{}</span>".format(featclass, charI) ]
-                    else:
-                        #htmlSequence+=charI
-                        htmlSequence+=["<span class=feat%s>%s</span>" % (charI.upper(),charI)]
-
-                else:
-                    htmlSequence+=["<span class=feat%s>%s</span>" % (charI.upper(),charI)]
-            elif charI == " ":
-                htmlSequence+=[" "]
-            else:
-                htmlSequence+=["-"]
-    return "".join(htmlSequence)+"\n"
-def numbering(seqLength, codon_length):
-    numbers = range(1,seqLength/codon_length)
-    result = srepeat(" ",15) + '0'
-    for i in numbers:
-        if i % 5 == 0:
-            result += srepeat(" ", 5-len(str(i))) + str(i)
-    return result+"\n"
-
-cod_length = int(argv[3])
-mode = int(argv[4])
-infile = unwrap(open(argv[1]).read().splitlines())
-newline = numbering(len(infile[1]),cod_length)
-if mode != 4:
-    outfile = open(argv[2],'w')
-    beginHTMLdocument(outfile)
-    outfile.write(newline)
-else:
-    outfile_dom = open(argv[2]+"_dom",'w')
-    outfile_phosph = open(argv[2]+"_phosph",'w')
-    outfile_motifs = open(argv[2]+"_motifs",'w')
-    outfile_reg = open(argv[2]+"_reg",'w')
-    beginHTMLdocument(outfile_dom)
-    beginHTMLdocument(outfile_phosph)
-    beginHTMLdocument(outfile_motifs)
-    beginHTMLdocument(outfile_reg)
-    outfile_dom.write(newline)
-    outfile_phosph.write(newline)
-    outfile_motifs.write(newline)
-    outfile_reg.write(newline)
-for i in range(len(infile)):
-    if "## PROBABILITIES" in infile[i]:
-        break
-    if i%2 == 0:
-        seqID = str((i/2) + 1)+"."+infile[i].split()[0].split('|')[-1]
-        if len(seqID) > 13:
-            seqID = seqID[0:12]
-        newline=seqID+srepeat(" ",15-len(seqID))
-        if mode != 4:
-            outfile.write(newline)
-        else:
-            outfile_dom.write(newline)
-            outfile_phosph.write(newline)
-            outfile_motifs.write(newline)
-            outfile_reg.write(newline)
-    else:
-        if mode != 4:
-            outfile.write(createHTMLsequence(infile[i].rstrip('\n'), cod_length, mode))
-        else:
-            outfile_reg.write(createHTMLsequence(infile[i].rstrip('\n'), cod_length, 0))
-            outfile_motifs.write(createHTMLsequence(infile[i].rstrip('\n'), cod_length, 1))
-            outfile_dom.write(createHTMLsequence(infile[i].rstrip('\n'), cod_length, 2))
-            outfile_phosph.write(createHTMLsequence(infile[i].rstrip('\n'), cod_length, 3))
-if mode != 4:
-    endHTMLdocument(outfile)
-else:
-    endHTMLdocument(outfile_dom)
-    endHTMLdocument(outfile_reg)
-    endHTMLdocument(outfile_phosph)
-    endHTMLdocument(outfile_motifs)
 if __name__ == "__main__":
-
+    parser = argparse.ArgumentParser(description="")
+    parser.add_argument("in_fasta")
+    parser.add_argument("in_cfg")
+    parser.add_argument("out_html")
+    parser.add_argument("mode")
+    args = parser.parse_args()
+    convert_to_html(args.in_fasta, args.in_cfg, args.out_html, args.mode)

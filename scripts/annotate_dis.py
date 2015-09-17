@@ -147,23 +147,26 @@ def make_conf_dict(metadata):
         single_feat = {"name": feature,
                        "add_score": al_score,
                        "subtract_score": 0,
-                       "add_features": [],
-                       "add_tags": [],
-                       "add_exceptions": [],
-                       "subtract_features": [],
-                       "subtract_tags": [],
-                       "subtract_exceptions": [],
-                       "subtract_features": [],
+                       "add_features": tuple(),
+                       "add_tags": tuple(),
+                       "add_exceptions": tuple(),
+                       "subtract_features": tuple(),
+                       "subtract_tags": tuple(),
+                       "subtract_exceptions": tuple(),
+                       "subtract_features": tuple(),
                        "pattern": '',
                        "positions": positions}
         conf_dict["feature_settings"]["usr_features"].append(
             single_feat)
+    conf_dict["feature_settings"]["usr_features"] = tuple(
+        conf_dict["feature_settings"]["usr_features"])
     return conf_dict
 
 
 def write_conf_file(metadata, outname):
     data_dict = make_conf_dict(metadata)
     indent = 2
+    print data_dict
     outtxt = encoder.dumps(data_dict, indent=indent)
     out = open(outname, 'w')
     out.write(outtxt)
