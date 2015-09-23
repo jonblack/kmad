@@ -17,6 +17,10 @@ SWISS_FASTA_DIR = "/home/joanna/data/swiss_fasta/uniprot_fasta"
 SWISS_DAT_DIR = "/home/joanna/data/swissprot_dat/uniprot_dat"
 SWISS_BLAST = "/home/joanna/data/uniprot_sprot"
 ELM_DB = "/home/joanna/data/elm_complete.txt"
+PSITE_PHOSPH = "/home/joanna/data/phosphosite/Phosphorylation_site_dataset"
+PSITE_ACET = "/home/joanna/data/phosphosite/Acetylation_site_dataset"
+PSITE_METH = "/home/joanna/data/phosphosite/Methylation_site_dataset"
+UNI_IDS_MAP = "/home/joanna/data/uniprot_ids.map"
 
 
 def parse_elm_db():
@@ -166,7 +170,6 @@ def make_conf_dict(metadata):
 def write_conf_file(metadata, outname):
     data_dict = make_conf_dict(metadata)
     indent = 2
-    print data_dict
     outtxt = encoder.dumps(data_dict, indent=indent)
     out = open(outname, 'w')
     out.write(outtxt)
@@ -230,12 +233,14 @@ def merge_list_dicts(x, y):
     return z
 
 
-def run_netphos(filename):
+def run_netphos(sequence):
     phosphorylations = set([])
+    tmp_file = tempfile.NamedTemporaryFile(suffix=".fasta", delete=False)
+    with tmp_file as f:
+        f.write('\n'.join(['>', sequence]))
     try:
-        args = ['netphos', filename]
+        args = ['netphos', tmp_file.name]
         netphos_result = subprocess.check_output(args).splitlines()
-
         for lineI in netphos_result:
             if len(lineI.split()) > 0 and lineI.split()[-1] == 'YES':
                 phosphorylations.add(int(lineI.split()[2]))
@@ -306,8 +311,46 @@ def parse_seq_data(seq_data, ptm_dict, seq_index):
                 ptm_dict[ptm_name]['positions'][seq_index + 1].append(position)
 
 
+# takes 0-based seq_index!
+def search_psite(ptm_positions, uni_id, seq_index, psite_db):
+    in_seq_section = False
+    for lineI in psite_db:
+        if not in_seq_section and uni_id in lineI:
+            # start looking for ptms
+            in_seq_section = True
+        if in_seq_section and uni_id in lineI:
+            # take ptm and add it to dict
+            reg = re.compile("[A-Z][0-9]{1,5}[-]")
+            matches = list(reg.finditer(lineI))
+            if len(matches) == 1:
+                # trim it by one character from both sides because the regex
+                # matches the residue char before the position and the dash
+                # after the position, eg. "S157-"
+                start = matches[0].span()[0] + 1
+                end = matches[0].span()[1] - 1
+                position = lineI[start:end]
+                if position.isdigit():
+                    if seq_index + 1 not in ptm_positions.keys():
+                        ptm_positions[seq_index + 1] = []
+                    ptm_positions[seq_index + 1].append(position)
+                else:
+                    print "Couldn't get position from line:\n{}".format(lineI)
+        elif in_seq_section:
+            # means it has already read all the entries for this sequence
+            break
+
+
 # output - sequences numbered 0-based (and so are positions)
 def find_ptm_sites(fasta_seqs_degapped, seq_ids):
+    with open(PSITE_ACET) as a:
+        psite_acet_db = a.read().splitlines()
+    with open(PSITE_METH) as a:
+        psite_meth_db = a.read().splitlines()
+    with open(PSITE_PHOSPH) as a:
+        psite_phosph_db = a.read().splitlines()
+    with open(UNI_IDS_MAP) as a:
+        infile = a.read().splitlines()
+        id_map = {i.split()[1]: i.split()[0] for i in infile}
     ptm_dict = {"ptm_phosph0": {'positions': {}},
                 "ptm_phosph1": {'positions': {}},
                 "ptm_phosph2": {'positions': {}},
@@ -344,6 +387,14 @@ def find_ptm_sites(fasta_seqs_degapped, seq_ids):
             parse_seq_data(seq_data, ptm_dict, i)
         predicted_phosph = run_netphos(fasta_seqs_degapped[(i * 2) + 1])
         ptm_dict["ptm_phosphP"]['positions'][i + 1] = predicted_phosph
+        if uni_id in id_map.keys():
+            alt_id = id_map[uni_id]
+            search_psite(ptm_dict["ptm_acet0"]['positions'], alt_id, i,
+                         psite_acet_db)
+            search_psite(ptm_dict["ptm_methyl0"]['positions'], alt_id, i,
+                         psite_meth_db)
+            search_psite(ptm_dict["ptm_phosph0"]['positions'], alt_id, i,
+                         psite_phosph_db)
     return ptm_dict
 
 
@@ -430,7 +481,6 @@ def annotate(inname, outname):
     motifs = find_motifs(fasta_seqs_degapped, seq_ids, elm_db)
     # domains = find_domains(fasta_seqs_degapped, seq_ids)
     metadata = merge_dicts(motifs, ptm_sites)
-    print metadata
     write_conf_file(metadata, outname)
 
 

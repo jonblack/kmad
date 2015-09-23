@@ -19,7 +19,7 @@ std::vector<fasta::SequenceList> msa::run_msa(
     double strct_modifier,
     int codon_length, bool one_round,
     const std::string& sbst_mat, const bool first_gapped, const bool optimize,
-    const bool fade_out, const bool no_feat)
+    const bool fade_out, const bool no_feat, const bool for_hope)
 {
       FeatureScores f_profile(sequence_data.feature_list, domain_modifier,
                               ptm_modifier, motif_modifier, strct_modifier,
@@ -89,13 +89,17 @@ std::vector<fasta::SequenceList> msa::run_msa(
       }
       // set alignments number to 0 to align (again) 
       // all sequences to the profile
-      int iterations = 1;
-      if (one_round) {
-        iterations = 1;
-      }
-      for (int i = 0; i < iterations; ++i) {
-        alignments_number = 0;
-        cutoff = 0;
+      alignments_number = 0;
+      cutoff = 0;
+      if (for_hope) {
+        alignment = msa::perform_msa_round_gapped(sequence_data,
+                                          sequence_data, profile,
+                                          f_profile, gap_open_pen, 
+                                          end_pen, gap_ext_pen, cutoff,
+                                          codon_length, identities,
+                                          alignments_number, f_set,
+                                          alignment, 0, no_feat);
+      } else{
         alignment = perform_msa_round_ptr(sequence_data,
                                           sequence_data, profile,
                                           f_profile, gap_open_pen, 
@@ -103,12 +107,12 @@ std::vector<fasta::SequenceList> msa::run_msa(
                                           codon_length, identities,
                                           alignments_number, f_set,
                                           alignment, 0, no_feat);
-        if (!no_feat) {
-          f_profile.update_scores(alignment[0], f_set, identities, fade_out);
-        }
-        profile = profile::create_score_profile(alignment[0], sbst_mat);
       }
-      if (optimize) {
+      if (!no_feat) {
+        f_profile.update_scores(alignment[0], f_set, identities, fade_out);
+      }
+      profile = profile::create_score_profile(alignment[0], sbst_mat);
+      if (optimize && !for_hope) {
         int counter = 0;
         std::vector<fasta::SequenceList> previous;
         while (!seq_data::compare_alignments(previous, alignment)

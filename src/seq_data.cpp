@@ -31,9 +31,13 @@ seq_data::SequenceData seq_data::process_fasta_data(
           }
           else {
             std::cout << "Warning: feature positions should be in range: 1 - "
-                          << "sequence length, feature " << feat_it->first
+                          << "sequence length ("
+                          << s.sequences[seq.seq_no].residues.size() << ")"
+                          << ", feature " << feat_it->first
                           << " cannot be annotated at position " << pos
-                          << " in sequence " << seq.seq_no << std::endl;
+                          << " in sequence " << seq.seq_no 
+                          << " " << s.sequences[seq.seq_no].description
+                          << std::endl;
           }
         }
       }

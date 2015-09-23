@@ -20,7 +20,8 @@ namespace msa {
       double ptm_modifier, double strct_modifier, int codon_length,
       bool one_round,
       const std::string& sbst_mat, const bool first_gapped,
-      const bool optimize, const bool fade_oup, const bool no_feat);
+      const bool optimize, const bool fade_oup, const bool no_feat,
+      const bool for_hope);
   ///
   /// takes alignment (sequence_data) and refines it (two rounds)
   ///

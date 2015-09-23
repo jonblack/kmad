@@ -67,11 +67,13 @@ BOOST_AUTO_TEST_CASE(test_run_msa)
   bool optimize = false;
   bool fade_out = false;
   bool no_feat = false;
+  bool for_hope = false;
   alignment = msa::run_msa(sequence_data, f_set, gap_open_pen, gap_ext_pen,
                            end_pen, domain_modifier, motif_modifier, 
                            ptm_modifier, strct_modifier, codon_length,
                            one_round, sbst_mat,
-                           first_gapped, optimize, fade_out, no_feat);
+                           first_gapped, optimize, fade_out, no_feat, 
+                           for_hope);
   fasta::Sequence e_s1;
   // AKLCAKL
   e_s1 = fasta::make_sequence("d", "AAAAAAAKAAAAAALAAAAAA"
@@ -153,11 +155,13 @@ BOOST_AUTO_TEST_CASE(test_run_msa_gapped_mode)
   bool optimize = false;
   bool fade_out = false;
   bool no_feat = false;
+  bool for_hope = false;
   alignment = msa::run_msa(sequence_data, f_set, gap_open_pen, gap_ext_pen,
                            end_pen, domain_modifier, motif_modifier, 
                            ptm_modifier, strct_modifier, codon_length,
                            one_round, sbst_mat,
-                           first_gapped, optimize, fade_out, no_feat);
+                           first_gapped, optimize, fade_out, no_feat,
+                           for_hope);
 
   BOOST_CHECK_EQUAL(alignment.size(), 2);
   BOOST_CHECK_EQUAL(alignment[0].size(), 3);
@@ -444,11 +448,12 @@ BOOST_AUTO_TEST_CASE(test_run_msa_with_feature_pattern) {
   bool optimize = false;
   bool fade_out = false;
   bool no_feat = false;
+  bool for_hope = false;
   auto alignment = msa::run_msa(sequence_data, f_set, gap_open_pen, gap_ext_pen,
                                 end_pen, domain_modifier, motif_modifier, 
                                 ptm_modifier, strct_modifier, codon_length,
                                 one_round, sbst_mat,
-                                gapped, optimize, fade_out, no_feat);
+                                gapped, optimize, fade_out, no_feat, for_hope);
   std::vector<std::string> expected = {"WFQIANWFQWFQLAN",
                                        "WFQLANWFQWF----",
                                        "WFQIANWFQWFQLAN",
@@ -469,7 +474,7 @@ BOOST_AUTO_TEST_CASE(test_run_msa_with_feature_pattern) {
                                 end_pen, domain_modifier, motif_modifier, 
                                 ptm_modifier, strct_modifier, codon_length,
                                 one_round, sbst_mat,
-                                gapped, optimize, fade_out, no_feat);
+                                gapped, optimize, fade_out, no_feat, for_hope);
   result.clear();
   for (auto& item : alignment) {
     for (auto& seq : item) {
@@ -513,11 +518,12 @@ BOOST_AUTO_TEST_CASE(test_run_msa_sial_human) {
   bool optimize = false;
   bool fade_out = false;
   bool no_feat = false;
+  bool for_hope = false;
   alignment = msa::run_msa(sequence_data, f_set, gap_open_pen, gap_ext_pen,
                            end_pen, domain_modifier, motif_modifier, 
                            ptm_modifier, strct_modifier, codon_length,
                            one_round, sbst_mat,
-                           first_gapped, optimize, fade_out, no_feat);
+                           first_gapped, optimize, fade_out, no_feat, for_hope);
 
 
   std::vector<std::string> result;
@@ -586,11 +592,13 @@ BOOST_AUTO_TEST_CASE(test_run_secondary_structure) {
   bool optimize = false;
   bool fade_out = false;
   bool no_feat = false;
+  bool for_hope = false;
   alignment = msa::run_msa(sequence_data, f_set, gap_open_pen, gap_ext_pen,
                            end_pen, domain_modifier, motif_modifier, 
                            ptm_modifier, strct_modifier, codon_length,
                            one_round, sbst_mat,
-                           first_gapped, optimize, fade_out, no_feat);
+                           first_gapped, optimize, fade_out, no_feat, 
+                           for_hope);
 
 
   std::vector<std::string> result;

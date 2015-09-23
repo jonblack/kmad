@@ -32,6 +32,7 @@ int main(int argc, char *argv[]) {
     bool optimize = false;
     bool no_feat = false;
     bool tree_guided = false;
+    bool for_hope = false;
     std::string filename;
     std::string output_prefix;
     std::string conf_file;
@@ -74,6 +75,11 @@ int main(int argc, char *argv[]) {
        po::value<bool>(&out_encoded)->implicit_value(true)
                                     ->default_value(false),
        "output alignment with encoded features")
+      ("hope",
+       po::value<bool>(&for_hope)->implicit_value(true)
+                                  ->default_value(false),
+       "only last round gapped"
+       )
       ("end,n",
        po::value<double>(&end_pen)->default_value(-0.1),
        "penalty for gaps at the end (and beginning)")
@@ -186,7 +192,7 @@ int main(int argc, char *argv[]) {
                                motif_modifier, ptm_modifier, strct_modifier,
                                codon_length,
                                one_round, sbst_mat, first_gapped, optimize,
-                               fade_out, no_feat);
+                               fade_out, no_feat, for_hope);
     } else if (!tree_guided) {
       bool gapped = true;
       seq_data::SequenceData sequence_data_alignment = seq_data::process_fasta_data(
