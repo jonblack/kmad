@@ -56,13 +56,39 @@ def get_id(sequence):
         return sequence.lstrip('>')
 
 
+# def check_id(uniprot_id, seq):
+#     print uniprot_id
+#     result = False
+#     path = os.path.join(SWISS_FASTA_DIR, uniprot_id + '.fasta')
+#     uni_seq = ''
+#     if os.path.exists(path):
+#         with open(path) as a:
+#             uni_seq = ''.join(a.read().splitlines()[1:])
+#     else:
+#         try:
+#
+#     if uni_seq == seq:
+#         result = True
+#     return result
+
+
 def check_id(uniprot_id, seq):
     result = False
-    path = os.path.join(SWISS_FASTA_DIR, uniprot_id + '.fasta')
-    uni_seq = ''
+    path = os.path.join('/home/joanna/data/uniprot_fasta',
+                        uniprot_id + '.fasta')
+    uni_seq = ""
     if os.path.exists(path):
         with open(path) as a:
             uni_seq = ''.join(a.read().splitlines()[1:])
+    else:
+        req = urllib2.Request("http://www.uniprot.org/uniprot/"
+                              + uniprot_id + ".fasta")
+        try:
+            uni_seq = urllib2.urlopen(req).read()
+        except urllib2.HTTPError:
+            print "No entry with ID: {}".format(uniprot_id)
+        else:
+            uni_seq = ''.join(uni_seq.splitlines()[1:])
     if uni_seq == seq:
         result = True
     return result
@@ -113,6 +139,7 @@ def find_uniprot_ids(fasta_seqs):
     seq_ids = []
     for i in range(0, len(fasta_seqs), 2):
         header_id = get_id(fasta_seqs[i])
+        print header_id
         if check_id(header_id, fasta_seqs[i + 1]):
             seq_ids.append(header_id)
         else:
@@ -286,7 +313,8 @@ def get_annotation_level(uni_features):
             if "ECO:0000" in uni_features[i]:
                 start = uni_features[i].index("ECO:0000") + 8
                 eco_code = uni_features[i][start:start+3]
-                n = levels_dict[eco_code]
+                if eco_code in levels_dict.keys():
+                    n = levels_dict[eco_code]
                 break
             i += 1
         else:
@@ -402,8 +430,10 @@ def find_ptm_sites(fasta_seqs_degapped, seq_ids):
 def get_annotated_motifs(seq_ids):
     motif_dict = {}
     # get annotated motifs first
+    print seq_ids
     for i, id_i in enumerate(seq_ids):
         if id_i:
+            print id_i
             url = "http://elm.eu.org/instances.gff?q={}".format(id_i)
             try:
                 req = urllib2.Request(url)
@@ -425,6 +455,7 @@ def get_annotated_motifs(seq_ids):
             except (urllib2.HTTPError,  urllib2.URLError,
                     SocketError, BadStatusLine):
                 print 'get_annotated_motifs: HTTPError'
+    print motif_dict
     return motif_dict
 
 

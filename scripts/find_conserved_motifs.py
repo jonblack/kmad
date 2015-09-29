@@ -91,7 +91,7 @@ def parse_config(alignment, config):
                         pos = [seq['pos']]
                     for i in pos:
                         real_pos = get_real_pos(
-                            alignment, int(seq['seq']) - 1, i - 1)
+                            alignment, int(seq['seq']) - 1, int(i) - 1)
                         # add this feature to sequence number seq['seq'] -1
                         # on position real_pos
                         alignment[seq['seq'] - 1][
@@ -143,6 +143,7 @@ def check_if_matches(sequence, mutation, motif_id, elm_db):
             result = True
             break
     return result
+
 
 def get_motifs_on_pos(alignment, position):
     motif_ids = set()
@@ -217,6 +218,7 @@ def calc_motif_conservation(alignment, mutations, elm_db):
                                                     present_in_old,
                                                     present_in_new))
     return outtxt
+
 
 def calc_ptm_conservation(alignment, mutations):
     outtxt = []
