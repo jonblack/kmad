@@ -212,7 +212,7 @@ def calc_motif_conservation(alignment, mutations, elm_db):
             #         c_50 >= 0.05, present_in_old]):
             # TEMPORARY
             # to output all features appearing on this position
-            if True:
+            if present_in_old or present_in_new:
                 outtxt.append(
                     "{}; {}; {}; {}; {}; {}".format(m, c_all, c_100, c_50,
                                                     present_in_old,
