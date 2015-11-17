@@ -439,7 +439,7 @@ gives unlimited permission to copy, distribute and modify it."
 
 ac_pwd='/home/joanna/Documents/kmad'
 srcdir='.'
-INSTALL='/usr/bin/install -c'
+INSTALL='config/install-sh -c'
 MKDIR_P='/bin/mkdir -p'
 AWK='gawk'
 test -n "$AWK" || AWK=awk
@@ -664,6 +664,10 @@ S["CPPFLAGS"]=""
 S["LDFLAGS"]=""
 S["CXXFLAGS"]="-g -O2"
 S["CXX"]="g++"
+S["AM_BACKSLASH"]="\\"
+S["AM_DEFAULT_VERBOSITY"]="1"
+S["AM_DEFAULT_V"]="$(AM_DEFAULT_VERBOSITY)"
+S["AM_V"]="$(V)"
 S["am__untar"]="$${TAR-tar} xf -"
 S["am__tar"]="$${TAR-tar} chof - \"$$tardir\""
 S["AMTAR"]="$${TAR-tar}"
@@ -675,11 +679,11 @@ S["MKDIR_P"]="/bin/mkdir -p"
 S["INSTALL_STRIP_PROGRAM"]="$(install_sh) -c -s"
 S["STRIP"]=""
 S["install_sh"]="${SHELL} /home/joanna/Documents/kmad/config/install-sh"
-S["MAKEINFO"]="${SHELL} /home/joanna/Documents/kmad/config/missing --run makeinfo"
-S["AUTOHEADER"]="${SHELL} /home/joanna/Documents/kmad/config/missing --run autoheader"
-S["AUTOMAKE"]="${SHELL} /home/joanna/Documents/kmad/config/missing --run automake-1.12"
-S["AUTOCONF"]="${SHELL} /home/joanna/Documents/kmad/config/missing --run autoconf"
-S["ACLOCAL"]="${SHELL} /home/joanna/Documents/kmad/config/missing --run aclocal-1.12"
+S["MAKEINFO"]="${SHELL} /home/joanna/Documents/kmad/config/missing makeinfo"
+S["AUTOHEADER"]="${SHELL} /home/joanna/Documents/kmad/config/missing autoheader"
+S["AUTOMAKE"]="${SHELL} /home/joanna/Documents/kmad/config/missing automake-1.14"
+S["AUTOCONF"]="${SHELL} /home/joanna/Documents/kmad/config/missing autoconf"
+S["ACLOCAL"]="${SHELL} /home/joanna/Documents/kmad/config/missing aclocal-1.14"
 S["VERSION"]="1.06.04"
 S["PACKAGE"]="kmad"
 S["CYGPATH_W"]="echo"
@@ -766,14 +770,6 @@ fi # test -n "$CONFIG_FILES"
 if test -n "$CONFIG_HEADERS"; then
 cat >"$ac_tmp/defines.awk" <<\_ACAWK ||
 BEGIN {
-D["PACKAGE_NAME"]=" \"kmad\""
-D["PACKAGE_TARNAME"]=" \"kmad\""
-D["PACKAGE_VERSION"]=" \"1.06.04\""
-D["PACKAGE_STRING"]=" \"kmad 1.06.04\""
-D["PACKAGE_BUGREPORT"]=" \"\""
-D["PACKAGE_URL"]=" \"\""
-D["PACKAGE"]=" \"kmad\""
-D["VERSION"]=" \"1.06.04\""
 D["HAVE_BOOST"]=" /**/"
 D["HAVE_BOOST_FILESYSTEM"]=" /**/"
 D["HAVE_BOOST_PROGRAM_OPTIONS"]=" /**/"
@@ -1125,7 +1121,7 @@ $as_echo "$as_me: executing $ac_file commands" >&6;}
 
   case $ac_file$ac_mode in
     "depfiles":C) test x"$AMDEP_TRUE" != x"" || {
-  # Autoconf 2.62 quotes --file arguments for eval, but not when files
+  # Older Autoconf quotes --file arguments for eval, but not when files
   # are listed without --file.  Let's play safe and only enable the eval
   # if we detect the quoting.
   case $CONFIG_FILES in
@@ -1176,7 +1172,7 @@ $as_echo X"$mf" |
     DEPDIR=`sed -n 's/^DEPDIR = //p' < "$mf"`
     test -z "$DEPDIR" && continue
     am__include=`sed -n 's/^am__include = //p' < "$mf"`
-    test -z "am__include" && continue
+    test -z "$am__include" && continue
     am__quote=`sed -n 's/^am__quote = //p' < "$mf"`
     # Find all dependency output files, they are included files with
     # $(DEPDIR) in their names.  We invoke sed twice because it is the

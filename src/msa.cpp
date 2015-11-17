@@ -19,7 +19,7 @@ std::vector<fasta::SequenceList> msa::run_msa(
     double strct_modifier,
     int codon_length, bool one_round,
     const std::string& sbst_mat, const bool first_gapped, const bool optimize,
-    const bool fade_out, const bool no_feat, const bool for_hope)
+    const bool fade_out, const bool no_feat, const bool full_ungapped)
 {
       FeatureScores f_profile(sequence_data.feature_list, domain_modifier,
                               ptm_modifier, motif_modifier, strct_modifier,
@@ -91,7 +91,7 @@ std::vector<fasta::SequenceList> msa::run_msa(
       // all sequences to the profile
       alignments_number = 0;
       cutoff = 0;
-      if (for_hope) {
+      if (full_ungapped) {
         alignment = msa::perform_msa_round_gapped(sequence_data,
                                           sequence_data, profile,
                                           f_profile, gap_open_pen, 
@@ -112,7 +112,7 @@ std::vector<fasta::SequenceList> msa::run_msa(
         f_profile.update_scores(alignment[0], f_set, identities, fade_out);
       }
       profile = profile::create_score_profile(alignment[0], sbst_mat);
-      if (optimize && !for_hope) {
+      if (optimize && !full_ungapped) {
         int counter = 0;
         std::vector<fasta::SequenceList> previous;
         while (!seq_data::compare_alignments(previous, alignment)

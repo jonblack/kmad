@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
     double domain_modifier = 0;
     double motif_modifier = 0;
     double gap_ext_pen = 0;
-    double gap_open_pen;
+    double gap_open_pen = 0;
     double end_pen = 0;
     bool out_encoded = false;
     bool one_round = false;
@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
     bool optimize = false;
     bool no_feat = false;
     bool tree_guided = false;
-    bool for_hope = false;
+    bool full_ungapped = false;
     std::string filename;
     std::string output_prefix;
     std::string conf_file;
@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
        po::value<double>(&gap_open_pen)->default_value(-5),
        "gap opening penalty")
       ("gap_extension,e",
-       po::value<double>(&gap_ext_pen)->default_value(-1.),
+       po::value<double>(&gap_ext_pen)->default_value(-1),
        "gap extension penalty")
       ("codon_length,c",
        po::value<int>(&codon_length)->implicit_value(7)
@@ -75,9 +75,9 @@ int main(int argc, char *argv[]) {
        po::value<bool>(&out_encoded)->implicit_value(true)
                                     ->default_value(false),
        "output alignment with encoded features")
-      ("hope",
-       po::value<bool>(&for_hope)->implicit_value(true)
-                                  ->default_value(false),
+      ("full_ungapped",
+       po::value<bool>(&full_ungapped)->implicit_value(true)
+                                      ->default_value(false),
        "only last round gapped"
        )
       ("end,n",
@@ -192,7 +192,7 @@ int main(int argc, char *argv[]) {
                                motif_modifier, ptm_modifier, strct_modifier,
                                codon_length,
                                one_round, sbst_mat, first_gapped, optimize,
-                               fade_out, no_feat, for_hope);
+                               fade_out, no_feat, full_ungapped);
     } else if (!tree_guided) {
       bool gapped = true;
       seq_data::SequenceData sequence_data_alignment = seq_data::process_fasta_data(
