@@ -31,10 +31,9 @@ std::vector<fasta::SequenceList> msa::run_msa(
       if (!no_feat) {
         f_profile.update_scores(query_seq_list, f_set, identities, fade_out);
       }
-
       // Align all sequences vs first to determine the identities
       identities = msa::set_identities(sequence_data, profile, f_profile,
-		      aln_params);
+                      aln_params);
 
 
       std::vector<fasta::SequenceList> alignment;
@@ -309,7 +308,7 @@ fasta::SequenceList msa::align_pairwise(const fasta::Sequence& input_sequence,
                                         const FeatureScores& f_profile,
 					bool gapped,
 					t::SettingsMap& aln_params) {
-  bool first_gapped = boost::get<bool>(aln_params["first_gapped"]);
+  //bool first_gapped = boost::get<bool>(aln_params["first_gapped"]);
   int codon_length = boost::get<int>(aln_params["codon_length"]);
   int profile_length = profile.begin()->second.size();
   ScoringMatrix scores(profile_length, input_sequence.residues.size(),
@@ -320,7 +319,7 @@ fasta::SequenceList msa::align_pairwise(const fasta::Sequence& input_sequence,
   alignment = scores.backtrace_alignment_path(input_sequence,
                                               profile, f_profile,
                                               codon_length);
-  if (!first_gapped) {
+  if (!gapped) {
     alignment = remove_gaps(alignment);
   }
   return alignment;
