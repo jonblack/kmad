@@ -67,9 +67,11 @@ std::vector<fasta::SequenceList> msa::run_msa(
         for (int i = 8; i >= 0; --i) {
           cutoff = double(i) / 10;
           int prev_alignments = alignments_number;
+          std::cout << "ok5_1" << std::endl;
           alignment = perform_msa_round_ptr(sequence_data, sequence_data,
 			  profile, f_profile, cutoff, identities, alignments_number, f_set,
 			  alignment, aln_params);
+          std::cout << "ok5_2" << std::endl;
           // prev_alignments - number of alignments performed in the previous
           // round, needed not to update the profiles if number of aligned
           // sequences hasn't changed
@@ -333,6 +335,7 @@ fasta::SequenceList msa::align_pairwise(const fasta::Sequence& input_sequence,
   if (!first_gapped) {
     alignment = remove_gaps(alignment);
   }
+  std::cout << "ok2_4" << std::endl;
   return alignment;
 }
 

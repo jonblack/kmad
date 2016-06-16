@@ -53,21 +53,23 @@ BOOST_AUTO_TEST_CASE(test_run_msa)
   // std::unordered_map<std::string, double> probabilities;
   f_config::FeatureSettingsMap f_set;
   fasta::SequenceList sequences = {s1, s2};
+  std::string sbst_mat = "BLOSUM";
   t::SettingsMap aln_params = {
-          {"gop", -5},
-          {"gep", -1},
-          {"pend", -1},
-          {"ptm", 10},
-          {"domain", 4},
-          {"motif", 3},
-          {"strct", 0},
+          {"gop", -5.0},
+          {"gep", -1.0},
+          {"pend", -1.0},
+          {"ptm", 10.0},
+          {"domain", 4.0},
+          {"motif", 3.0},
+          {"strct", 0.0},
           {"no_feat", false},
           {"codon_length", codon_length},
           {"fade_out", false},
           {"first_gapped", false},
           {"optimize", false},
-          {"sbst_mat", "BLOSUM"},
+          {"sbst_mat", sbst_mat},
           {"one_round", false},
+          {"refine_seq", 0}
   };
   seq_data::SequenceData sequence_data;
   sequence_data.sequences = sequences;
@@ -135,21 +137,23 @@ BOOST_AUTO_TEST_CASE(test_run_msa_gapped_mode)
   sequences = {fasta::make_sequence("WWTWW", 1),
                fasta::make_sequence("WTWRW", 1),
                fasta::make_sequence("WRWTWRW", 1)};
+  std::string sbst_mat = "BLOSUM";
   t::SettingsMap aln_params = {
-          {"gop", -4},
-          {"gep", -4},
-          {"pend", -4},
-          {"ptm", 0},
-          {"domain", 0},
-          {"motif", 0},
-          {"strct", 0},
+          {"gop", -4.0},
+          {"gep", -4.0},
+          {"pend", -4.0},
+          {"ptm", 0.0},
+          {"domain", 0.0},
+          {"motif", 0.0},
+          {"strct", 0.0},
           {"no_feat", false},
           {"codon_length", 1},
           {"fade_out", false},
           {"first_gapped", true},
           {"optimize", false},
-          {"sbst_mat", "BLOSUM"},
+          {"sbst_mat", sbst_mat},
           {"one_round", false},
+          {"refine_seq", 0}
   };
   seq_data::SequenceData sequence_data;
   FeatureNamesList feature_list;
@@ -198,13 +202,13 @@ BOOST_AUTO_TEST_CASE(test_set_identities)
   std::string sbst_mat = "BLOSUM";
   bool fade_out = false;
   t::SettingsMap aln_params = {
-          {"gop", -5},
-          {"gep", -1},
-          {"pend", -1},
-          {"ptm", 10},
-          {"domain", 4},
-          {"motif", 3},
-          {"strct", 0},
+          {"gop", -5.0},
+          {"gep", -1.0},
+          {"pend", -1.0},
+          {"ptm", 10.0},
+          {"domain", 4.0},
+          {"motif", 3.0},
+          {"strct", 0.0},
           {"no_feat", false},
           {"codon_length", codon_length},
           {"fade_out", fade_out},
@@ -212,6 +216,7 @@ BOOST_AUTO_TEST_CASE(test_set_identities)
           {"optimize", false},
           {"sbst_mat", sbst_mat},
           {"one_round", false},
+          {"refine_seq", 0}
   };
   fasta::SequenceList sequences = {s1, s2};
   seq_data::SequenceData sequence_data;
@@ -393,21 +398,23 @@ BOOST_AUTO_TEST_CASE(test_run_msa_with_feature_pattern) {
   fasta_data.sequences = s;
   seq_data::SequenceData sequence_data = seq_data::process_fasta_data(
       fasta_data, f_set, gapped);
+  std::string sbst_mat = "BLOSUM";
   t::SettingsMap aln_params = {
-          {"gop", -5},
-          {"gep", -1},
-          {"pend", -1},
-          {"ptm", 10},
-          {"domain", 4},
-          {"motif", 3},
-          {"strct", 10},
+          {"gop", -5.0},
+          {"gep", -1.0},
+          {"pend", -1.0},
+          {"ptm", 10.0},
+          {"domain", 4.0},
+          {"motif", 3.0},
+          {"strct", 10.0},
           {"no_feat", false},
           {"codon_length", 7},
           {"fade_out", false},
           {"first_gapped", false},
           {"optimize", false},
-          {"sbst_mat", "BLOSUM"},
+          {"sbst_mat", sbst_mat},
           {"one_round", false},
+          {"refine_seq", 0}
   };
   auto alignment = msa::run_msa(sequence_data, f_set, aln_params);
   std::vector<std::string> expected = {"WFQIANWFQWFQLAN", "WFQLANWFQWF----",
@@ -444,21 +451,23 @@ BOOST_AUTO_TEST_CASE(test_run_msa_sial_human) {
           fasta::make_sequence("GDNGEEDGEEE", 1),
           fasta::make_sequence("GDNGEEAEEA", 1),
           fasta::make_sequence("GDNGEEAEAEEA", 1)};
+  std::string sbst_mat = "BLOSUM";
   t::SettingsMap aln_params = {
-          {"gop", -12},
-          {"gep", -1},
-          {"pend", -12},
-          {"ptm", 0},
-          {"domain", 0},
-          {"motif", 0},
-          {"strct", 0},
+          {"gop", -12.0},
+          {"gep", -1.0},
+          {"pend", -12.0},
+          {"ptm", 0.0},
+          {"domain", 0.0},
+          {"motif", 0.0},
+          {"strct", 0.0},
           {"no_feat", false},
           {"codon_length", 7},
           {"fade_out", false},
           {"first_gapped", true},
           {"optimize", false},
-          {"sbst_mat", "BLOSUM"},
-          {"one_round", false}
+          {"sbst_mat", sbst_mat},
+          {"one_round", false},
+          {"refine_seq", 0}
   };
   seq_data::SequenceData sequence_data;
   FeatureNamesList feature_list;
@@ -490,21 +499,23 @@ BOOST_AUTO_TEST_CASE(test_run_secondary_structure) {
   fasta::SequenceList sequences;
   sequences = {fasta::make_sequence("CAAAsAATAAAAAACAAAAAAWAAAAAA", 7),
                fasta::make_sequence("CAAAsAAWAAAAAA", 7)};
+  std::string sbst_mat = "DISORDER";
   t::SettingsMap aln_params = {
-          {"gop", -12},
-          {"gep", -1},
-          {"pend", -12},
-          {"ptm", 50},
-          {"domain", 0},
-          {"motif", 0},
-          {"strct", 0},
+          {"gop", -12.0},
+          {"gep", -1.0},
+          {"pend", -12.0},
+          {"ptm", 50.0},
+          {"domain", 0.0},
+          {"motif", 0.0},
+          {"strct", 0.0},
           {"no_feat", false},
           {"codon_length", 7},
           {"fade_out", false},
           {"first_gapped", true},
           {"optimize", false},
-          {"sbst_mat", "DISORDER"},
-          {"one_round", false}
+          {"sbst_mat", sbst_mat},
+          {"one_round", false},
+          {"refine_seq", 0}
   };
   seq_data::SequenceData sequence_data;
   FeatureNamesList feature_list = {
