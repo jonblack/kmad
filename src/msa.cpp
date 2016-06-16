@@ -24,6 +24,7 @@ std::vector<fasta::SequenceList> msa::run_msa(
       bool one_round = boost::get<bool>(aln_params["one_round"]);
       bool optimize = boost::get<bool>(aln_params["optimize"]);
       bool no_feat = boost::get<bool>(aln_params["no_feat"]);
+      std::cout << "ok1" << std::endl;
       fasta::SequenceList query_seq_list = {sequence_data.sequences[0]};
       profile::ProfileMap profile = profile::create_score_profile(
           query_seq_list, sbst_mat);
@@ -32,9 +33,11 @@ std::vector<fasta::SequenceList> msa::run_msa(
         f_profile.update_scores(query_seq_list, f_set, identities, fade_out);
       }
 
+      std::cout << "ok2" << std::endl;
       // Align all sequences vs first to determine the identities
       identities = msa::set_identities(sequence_data, profile, f_profile,
 		      aln_params);
+      std::cout << "ok3" << std::endl;
 
 
       std::vector<fasta::SequenceList> alignment;
@@ -42,6 +45,7 @@ std::vector<fasta::SequenceList> msa::run_msa(
       double cutoff = 0;
       // pointer to the function performing single round of msa, can be either
       // for gapped or ungapped first sequence
+      std::cout << "ok4" << std::endl;
       std::vector<fasta::SequenceList> (*perform_msa_round_ptr)(
         const seq_data::SequenceData& sequence_data,
         const seq_data::SequenceData& sequence_data_alignment,
@@ -58,6 +62,7 @@ std::vector<fasta::SequenceList> msa::run_msa(
       } else {
         perform_msa_round_ptr = msa::perform_msa_round_ungapped;
       }
+      std::cout << "ok5" << std::endl;
       if (!one_round) {
         for (int i = 8; i >= 0; --i) {
           cutoff = double(i) / 10;
@@ -77,6 +82,7 @@ std::vector<fasta::SequenceList> msa::run_msa(
           }
         }
       }
+      std::cout << "ok6" << std::endl;
       // set alignments number to 0 to align (again)
       // all sequences to the profile
       int iterations = 1;
@@ -84,6 +90,7 @@ std::vector<fasta::SequenceList> msa::run_msa(
         iterations = 1;
       }
 
+      std::cout << "ok7" << std::endl;
       for (int i = 0; i < iterations; ++i) {
         alignments_number = 0;
         cutoff = 0;
@@ -309,11 +316,14 @@ fasta::SequenceList msa::align_pairwise(const fasta::Sequence& input_sequence,
                                         const FeatureScores& f_profile,
 					bool gapped,
 					t::SettingsMap& aln_params) {
+  std::cout << "ok2_1" << std::endl;
   bool first_gapped = boost::get<bool>(aln_params["first_gapped"]);
   int codon_length = boost::get<int>(aln_params["codon_length"]);
+  std::cout << "ok2_2" << std::endl;
   int profile_length = profile.begin()->second.size();
   ScoringMatrix scores(profile_length, input_sequence.residues.size(),
                   aln_params);
+  std::cout << "ok2_3" << std::endl;
 
   scores.calculate_scores(input_sequence, profile, f_profile, codon_length);
   fasta::SequenceList alignment;

@@ -175,10 +175,10 @@ BOOST_AUTO_TEST_CASE(test_optimize_alignment)
 
   std::string sbst_mat = "BLOSUM";
   t::SettingsMap aln_params = {
-          {"ptm", 0},
-          {"domain", 0},
-          {"motif", 0},
-          {"sbst_mat", "BLOSUM"},
+          {"ptm", 0.0},
+          {"domain", 0.0},
+          {"motif", 0.0},
+          {"sbst_mat", sbst_mat},
   };
   alignment = optimizer::optimize_alignment(alignment, aln_params);
 

@@ -9,9 +9,9 @@
 ScoringMatrix::ScoringMatrix(int s1_size,int s2_size, t::SettingsMap& aln_params)
 : m_i_length(s1_size),
   m_j_length(s2_size),
-  m_gap_opening(boost::get<int>(aln_params["gop"])),
-  m_gap_extension(boost::get<int>(aln_params["gep"])),
-  m_end_pen(boost::get<int>(aln_params["pend"])),
+  m_gap_opening(boost::get<double>(aln_params["gop"])),
+  m_gap_extension(boost::get<double>(aln_params["gep"])),
+  m_end_pen(boost::get<double>(aln_params["pend"])),
   m_no_feat(boost::get<bool>(aln_params["no_feat"]))
 {
   //creates a row for the scoring matrices of length m_j_length

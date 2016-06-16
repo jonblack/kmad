@@ -27,13 +27,13 @@ BOOST_AUTO_TEST_CASE(test_calculate_scores) {
   profile::ProfileMap profile = profile::create_score_profile(query_seq_list,
                                                               sbst_mat);
   t::SettingsMap aln_params = {
-          {"gop", -5},
-          {"gep", -1},
-          {"pend", -1},
-          {"ptm", 10},
-          {"domain", 4},
-          {"motif", 3},
-          {"strct", 10},
+          {"gop", -5.0},
+          {"gep", -1.0},
+          {"pend", -1.0},
+          {"ptm", 10.0},
+          {"domain", 4.0},
+          {"motif", 3.0},
+          {"strct", 10.0},
           {"no_feat", false},
           {"codon_length", codon_length},
           {"fade_out", fade_out},
@@ -100,13 +100,13 @@ BOOST_AUTO_TEST_CASE(test_backtrace_alignment_path) {
   std::string sbst_mat = "BLOSUM";
   bool fade_out = false;
   t::SettingsMap aln_params = {
-          {"gop", -5},
-          {"gep", -1},
-          {"pend", -1},
-          {"ptm", 10},
-          {"domain", 4},
-          {"motif", 3},
-          {"strct", 10},
+          {"gop", -5.0},
+          {"gep", -1.0},
+          {"pend", -1.0},
+          {"ptm", 10.0},
+          {"domain", 4.0},
+          {"motif", 3.0},
+          {"strct", 10.0},
           {"no_feat", false},
           {"codon_length", codon_length},
           {"fade_out", fade_out},
@@ -156,7 +156,7 @@ BOOST_AUTO_TEST_CASE(test_backtrace_alignment_path) {
   }
   aln_params["gep"] = -0.1;
   aln_params["pend"] = -0.01;
-  aln_params["gop"] = -1;
+  aln_params["gop"] = -1.0;
   s1 = fasta::make_sequence("d", "RRRDDRR", codon_length);
   s2 = fasta::make_sequence("d", "RRRWWRR", codon_length);
   query_seq_list = {s1};

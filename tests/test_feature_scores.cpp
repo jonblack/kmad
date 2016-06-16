@@ -86,10 +86,10 @@ BOOST_AUTO_TEST_CASE(test_update_scores)
                                          {"m_ac", 0.8}};
 
   t::SettingsMap aln_params = {
-          {"ptm", 10},
-          {"domain", 4},
-          {"motif", 3},
-          {"strct", 0}
+          {"ptm", 10.0},
+          {"domain", 4.0},
+          {"motif", 3.0},
+          {"strct", 0.0}
   };
   FeatureScores f_profile(feature_list, aln_params, probs);
   f_config::FeatureSettings settings1;
@@ -160,10 +160,10 @@ BOOST_AUTO_TEST_CASE(test_update_scores)
   }
   feature_list = {"p_phosph9", "m_aa", "d_aa"};
   aln_params = {
-          {"ptm", 10},
-          {"domain", 4},
-          {"motif", 3},
-          {"strct", 0}
+          {"ptm", 10.0},
+          {"domain", 4.0},
+          {"motif", 3.0},
+          {"strct", 0.0}
   };
   f_profile = FeatureScores(feature_list, aln_params, probs);
   // SEQUENCE S1
