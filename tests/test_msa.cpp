@@ -4,11 +4,14 @@
 #include "src/f_config.h"
 #include "src/msa.h"
 #include "src/profile.h"
+#include "src/types.h"
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/auto_unit_test.hpp>
 
 #include <cmath>
+
+namespace t = types;
 
 
 BOOST_AUTO_TEST_SUITE(test_msa)
@@ -50,28 +53,27 @@ BOOST_AUTO_TEST_CASE(test_run_msa)
   // std::unordered_map<std::string, double> probabilities;
   f_config::FeatureSettingsMap f_set;
   fasta::SequenceList sequences = {s1, s2};
-  int d_modifier = 4;
-  int m_modifier = 3;
-  int p_modifier = 10;
-  int s_modifier = 0;
-  double gap_open_pen = -5;
-  double gap_ext_pen = -1;
-  double end_pen = -1;
-  bool one_round = false;
+  t::SettingsMap aln_params = {
+          {"gop", -5},
+          {"gep", -1},
+          {"pend", -1},
+          {"ptm", 10},
+          {"domain", 4},
+          {"motif", 3},
+          {"strct", 0},
+          {"no_feat", false},
+          {"codon_length", codon_length},
+          {"fade_out", false},
+          {"first_gapped", false},
+          {"optimize", false},
+          {"sbst_mat", "BLOSUM"},
+          {"one_round", false},
+  };
   seq_data::SequenceData sequence_data;
   sequence_data.sequences = sequences;
   sequence_data.feature_list = feature_list;
   std::vector<fasta::SequenceList> alignment;
-  std::string sbst_mat = "BLOSUM";
-  bool first_gapped = false;
-  bool optimize = false;
-  bool fade_out = false;
-  bool no_feat = false;
-  alignment = msa::run_msa(sequence_data, f_set, gap_open_pen, gap_ext_pen,
-                           end_pen, d_modifier, m_modifier,
-                           p_modifier, s_modifier, codon_length,
-                           one_round, sbst_mat,
-                           first_gapped, optimize, fade_out, no_feat);
+  alignment = msa::run_msa(sequence_data, f_set, aln_params);
   fasta::Sequence e_s1;
   // AKLCAKL
   e_s1 = fasta::make_sequence("d", "AAAAAAAKAAAAAALAAAAAA"
@@ -133,31 +135,29 @@ BOOST_AUTO_TEST_CASE(test_run_msa_gapped_mode)
   sequences = {fasta::make_sequence("WWTWW", 1),
                fasta::make_sequence("WTWRW", 1),
                fasta::make_sequence("WRWTWRW", 1)};
-  int d_modifier = 0;
-  int m_modifier = 0;
-  int p_modifier = 0;
-  int s_modifier = 0;
-  double gap_open_pen = -4;
-  double gap_ext_pen = -4;
-  double end_pen = -4;
-  int codon_length = 1;
-  bool one_round = false;
+  t::SettingsMap aln_params = {
+          {"gop", -4},
+          {"gep", -4},
+          {"pend", -4},
+          {"ptm", 0},
+          {"domain", 0},
+          {"motif", 0},
+          {"strct", 0},
+          {"no_feat", false},
+          {"codon_length", 1},
+          {"fade_out", false},
+          {"first_gapped", true},
+          {"optimize", false},
+          {"sbst_mat", "BLOSUM"},
+          {"one_round", false},
+  };
   seq_data::SequenceData sequence_data;
   FeatureNamesList feature_list;
   // std::unordered_map<std::string, double> probabilities;
   sequence_data.sequences = sequences;
   sequence_data.feature_list = feature_list;
   std::vector<fasta::SequenceList> alignment;
-  std::string sbst_mat = "BLOSUM";
-  bool first_gapped = true;
-  bool optimize = false;
-  bool fade_out = false;
-  bool no_feat = false;
-  alignment = msa::run_msa(sequence_data, f_set, gap_open_pen, gap_ext_pen,
-                           end_pen, d_modifier, m_modifier,
-                           p_modifier, s_modifier, codon_length,
-                           one_round, sbst_mat,
-                           first_gapped, optimize, fade_out, no_feat);
+  alignment = msa::run_msa(sequence_data, f_set, aln_params);
 
   BOOST_CHECK_EQUAL(alignment.size(), 2);
   BOOST_CHECK_EQUAL(alignment[0].size(), 3);
@@ -195,33 +195,39 @@ BOOST_AUTO_TEST_CASE(test_set_identities)
           "p_Oglyc2", "p_Oglyc3", "p_cys_bridge0", "s_a_helix", "s_turn",
           "s_b_ladder", "s_b_bridge", "s_310_helix", "s_pi_helix", "s_b_ladder"};
   f_config::FeatureSettingsMap f_set;
-  double gap_open_pen = -5;
-  double gap_ext_pen = -1;
-  double end_pen = -1;
-  int d_modifier = 4;
-  int m_modifier = 3;
-  int p_modifier = 10;
-  int s_modifier = 0;
+  std::string sbst_mat = "BLOSUM";
+  bool fade_out = false;
+  t::SettingsMap aln_params = {
+          {"gop", -5},
+          {"gep", -1},
+          {"pend", -1},
+          {"ptm", 10},
+          {"domain", 4},
+          {"motif", 3},
+          {"strct", 0},
+          {"no_feat", false},
+          {"codon_length", codon_length},
+          {"fade_out", fade_out},
+          {"first_gapped", true},
+          {"optimize", false},
+          {"sbst_mat", sbst_mat},
+          {"one_round", false},
+  };
   fasta::SequenceList sequences = {s1, s2};
   seq_data::SequenceData sequence_data;
   sequence_data.sequences = sequences;
   sequence_data.feature_list = feature_list;
-  FeatureScores f_profile(sequence_data.feature_list, d_modifier,
-                          p_modifier, m_modifier, s_modifier,
+  FeatureScores f_profile(sequence_data.feature_list, aln_params,
                           sequence_data.probabilities);
   // query_seq_list - the profile are built only based on the first
   // sequence
   fasta::SequenceList query_seq_list = {s1};
-  std::string sbst_mat = "BLOSUM";
   profile::ProfileMap profile = profile::create_score_profile(
       query_seq_list, sbst_mat);
-  bool fade_out = false;
-  bool no_feat = false;
   std::vector<double> identities(query_seq_list.size(), 1.0);
   f_profile.update_scores(query_seq_list, f_set, identities, fade_out);
   std::vector<double> result_identities = msa::set_identities(
-                  sequence_data, profile, f_profile, gap_open_pen, end_pen,
-                  gap_ext_pen, codon_length, no_feat);
+                  sequence_data, profile, f_profile, aln_params);
   std::vector<double> expected_identities = {1, 0.857};
   BOOST_CHECK_EQUAL(expected_identities.size(), result_identities.size());
   for (size_t i = 0; i < result_identities.size(); ++i) {
@@ -387,24 +393,23 @@ BOOST_AUTO_TEST_CASE(test_run_msa_with_feature_pattern) {
   fasta_data.sequences = s;
   seq_data::SequenceData sequence_data = seq_data::process_fasta_data(
       fasta_data, f_set, gapped);
-  int d_modifier = 4;
-  int m_modifier = 3;
-  int p_modifier = 10;
-  int s_modifier = 10;
-  double gap_open_pen = -5;
-  double gap_ext_pen = -1;
-  double end_pen = -1;
-  bool one_round = false;
-  int codon_length = 7;
-  std::string sbst_mat = "BLOSUM";
-  bool optimize = false;
-  bool fade_out = false;
-  bool no_feat = false;
-  auto alignment = msa::run_msa(sequence_data, f_set, gap_open_pen, gap_ext_pen,
-                                end_pen, d_modifier, m_modifier,
-                                p_modifier, s_modifier, codon_length,
-                                one_round, sbst_mat,
-                                gapped, optimize, fade_out, no_feat);
+  t::SettingsMap aln_params = {
+          {"gop", -5},
+          {"gep", -1},
+          {"pend", -1},
+          {"ptm", 10},
+          {"domain", 4},
+          {"motif", 3},
+          {"strct", 10},
+          {"no_feat", false},
+          {"codon_length", 7},
+          {"fade_out", false},
+          {"first_gapped", false},
+          {"optimize", false},
+          {"sbst_mat", "BLOSUM"},
+          {"one_round", false},
+  };
+  auto alignment = msa::run_msa(sequence_data, f_set, aln_params);
   std::vector<std::string> expected = {"WFQIANWFQWFQLAN", "WFQLANWFQWF----",
                                        "WFQIANWFQWFQLAN", "WFQLANWFQWF----"};
   std::vector<std::string> result;
@@ -417,11 +422,7 @@ BOOST_AUTO_TEST_CASE(test_run_msa_with_feature_pattern) {
                                 result.begin(), result.end());
   f_set = f_config::ConfParser::parse_conf_file("tests/test_conffile_pattern.cfg");
   sequence_data = seq_data::process_fasta_data(fasta_data, f_set, gapped);
-  alignment = msa::run_msa(sequence_data, f_set, gap_open_pen, gap_ext_pen,
-                                end_pen, d_modifier, m_modifier,
-                                p_modifier, s_modifier, codon_length,
-                                one_round, sbst_mat,
-                                gapped, optimize, fade_out, no_feat);
+  alignment = msa::run_msa(sequence_data, f_set, aln_params);
   result.clear();
   for (auto& item : alignment) {
     for (auto& seq : item) {
@@ -443,33 +444,30 @@ BOOST_AUTO_TEST_CASE(test_run_msa_sial_human) {
           fasta::make_sequence("GDNGEEDGEEE", 1),
           fasta::make_sequence("GDNGEEAEEA", 1),
           fasta::make_sequence("GDNGEEAEAEEA", 1)};
-  int d_modifier = 0;
-  int m_modifier = 0;
-  int p_modifier = 0;
-  int s_modifier = 0;
-  double gap_open_pen = -12;
-  double gap_ext_pen = -1;
-  double end_pen = -12;
-  int codon_length = 1;
-  bool one_round = false;
+  t::SettingsMap aln_params = {
+          {"gop", -12},
+          {"gep", -1},
+          {"pend", -12},
+          {"ptm", 0},
+          {"domain", 0},
+          {"motif", 0},
+          {"strct", 0},
+          {"no_feat", false},
+          {"codon_length", 7},
+          {"fade_out", false},
+          {"first_gapped", true},
+          {"optimize", false},
+          {"sbst_mat", "BLOSUM"},
+          {"one_round", false}
+  };
   seq_data::SequenceData sequence_data;
   FeatureNamesList feature_list;
   std::unordered_map<std::string, double> probabilities;
-  std::string sbst_mat = "BLOSUM";
-  bool first_gapped = true;
   sequence_data.feature_list = feature_list;
 
   std::vector<fasta::SequenceList> alignment;
   sequence_data.sequences = sequences;
-  bool optimize = false;
-  bool fade_out = false;
-  bool no_feat = false;
-  alignment = msa::run_msa(sequence_data, f_set, gap_open_pen, gap_ext_pen,
-                           end_pen, d_modifier, m_modifier,
-                           p_modifier, s_modifier, codon_length,
-                           one_round, sbst_mat,
-                           first_gapped, optimize, fade_out, no_feat);
-
+  alignment = msa::run_msa(sequence_data, f_set, aln_params);
 
   std::vector<std::string> result;
   for (auto& seqlist : alignment) {
@@ -492,15 +490,22 @@ BOOST_AUTO_TEST_CASE(test_run_secondary_structure) {
   fasta::SequenceList sequences;
   sequences = {fasta::make_sequence("CAAAsAATAAAAAACAAAAAAWAAAAAA", 7),
                fasta::make_sequence("CAAAsAAWAAAAAA", 7)};
-  int d_modifier = 0;
-  int m_modifier = 0;
-  int p_modifier = 50;
-  int s_modifier = 0;
-  double gap_open_pen = -12;
-  double gap_ext_pen = -1;
-  double end_pen = -12;
-  int codon_length = 7;
-  bool one_round = false;
+  t::SettingsMap aln_params = {
+          {"gop", -12},
+          {"gep", -1},
+          {"pend", -12},
+          {"ptm", 50},
+          {"domain", 0},
+          {"motif", 0},
+          {"strct", 0},
+          {"no_feat", false},
+          {"codon_length", 7},
+          {"fade_out", false},
+          {"first_gapped", true},
+          {"optimize", false},
+          {"sbst_mat", "DISORDER"},
+          {"one_round", false}
+  };
   seq_data::SequenceData sequence_data;
   FeatureNamesList feature_list = {
           "p_phosph0", "p_phosph1", "p_phosph2", "p_phosph3", "p_phosphP",
@@ -511,22 +516,11 @@ BOOST_AUTO_TEST_CASE(test_run_secondary_structure) {
           "p_Oglyc2", "p_Oglyc3", "p_cys_bridge0", "s_a_helix", "s_turn",
           "s_b_ladder", "s_b_bridge", "s_310_helix", "s_pi_helix",
           "s_b_ladder"};
-  // std::unordered_map<std::string, double> probabilities;
-  std::string sbst_mat = "DISORDER";
-  bool first_gapped = true;
   sequence_data.feature_list = feature_list;
 
   std::vector<fasta::SequenceList> alignment;
   sequence_data.sequences = sequences;
-  bool optimize = false;
-  bool fade_out = false;
-  bool no_feat = false;
-  alignment = msa::run_msa(sequence_data, f_set, gap_open_pen, gap_ext_pen,
-                           end_pen, d_modifier, m_modifier,
-                           p_modifier, s_modifier, codon_length,
-                           one_round, sbst_mat,
-                           first_gapped, optimize, fade_out, no_feat);
-
+  alignment = msa::run_msa(sequence_data, f_set, aln_params);
 
   std::vector<std::string> result;
   for (auto& seqlist : alignment) {

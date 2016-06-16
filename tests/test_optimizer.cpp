@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_CASE(test_single_move_score)
 }
 
 
-BOOST_AUTO_TEST_CASE(test_calculate_move_scores) 
+BOOST_AUTO_TEST_CASE(test_calculate_move_scores)
 {
   std::vector<fasta::SequenceList> alignment = {{
     fasta::make_sequence("AAE--AA", 1),
@@ -174,11 +174,13 @@ BOOST_AUTO_TEST_CASE(test_optimize_alignment)
 
 
   std::string sbst_mat = "BLOSUM";
-  double domain = 0;
-  double motif = 0;
-  double ptm = 0;
-  alignment = optimizer::optimize_alignment(alignment, domain, motif, ptm,
-                                            sbst_mat);
+  t::SettingsMap aln_params = {
+          {"ptm", 0},
+          {"domain", 0},
+          {"motif", 0},
+          {"sbst_mat", "BLOSUM"},
+  };
+  alignment = optimizer::optimize_alignment(alignment, aln_params);
 
   std::vector<std::string> result;
   for (auto& item : alignment) {

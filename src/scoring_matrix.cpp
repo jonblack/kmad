@@ -6,15 +6,13 @@
 #include <boost/filesystem.hpp>
 
 
-ScoringMatrix::ScoringMatrix(int s1_size,int s2_size, double pen,
-                             double end_pen, double gap_ext_pen,
-                             const bool no_feat)
+ScoringMatrix::ScoringMatrix(int s1_size,int s2_size, t::SettingsMap& aln_params)
 : m_i_length(s1_size),
   m_j_length(s2_size),
-  m_gap_opening(pen),
-  m_gap_extension(gap_ext_pen),
-  m_end_pen(end_pen),
-  m_no_feat(no_feat)
+  m_gap_opening(boost::get<int>(aln_params["gop"])),
+  m_gap_extension(boost::get<int>(aln_params["gep"])),
+  m_end_pen(boost::get<int>(aln_params["pend"])),
+  m_no_feat(boost::get<bool>(aln_params["no_feat"]))
 {
   //creates a row for the scoring matrices of length m_j_length
   //(length of the jth sequence + 1)
@@ -27,10 +25,9 @@ ScoringMatrix::ScoringMatrix(int s1_size,int s2_size, double pen,
 }
 
 
-void ScoringMatrix::calculate_scores(const fasta::Sequence& sequence,
-                                     const profile::ProfileMap& profile,
-                                     const FeatureScores& f_profile,
-                                     int codon_length) {
+void ScoringMatrix::calculate_scores(
+                const fasta::Sequence& sequence, const profile::ProfileMap& profile,
+                const FeatureScores& f_profile, int codon_length) {
   assert(m_matrix_v.size() == m_matrix_g.size());
   assert(m_matrix_v.size() == m_matrix_h.size());
 
@@ -134,7 +131,6 @@ fasta::SequenceList ScoringMatrix::backtrace_alignment_path(
   fasta::Sequence profile_sequence;
   profile_sequence = fasta::make_sequence(profile.begin()->second.size(),
                                           ala);
-  // s2.insert(s2.begin(), gap_residue);
   fasta::Sequence new_s1;
   fasta::Sequence new_s2;
   int i = profile_sequence.residues.size();
@@ -167,8 +163,6 @@ fasta::SequenceList ScoringMatrix::backtrace_alignment_path(
     if (i > 0 && j > 0 && current_matrix == "V") {  //match/mismatch
       new_res1 = profile_sequence.residues[i - 1];
       new_res2 = sequence.residues[j - 1];
-      // double profile_score = profile.at(
-      //     sequence.residues[j - 1].codon[0])[i - 1];
       double profile_score = profile::get_score(profile, i - 1,
           sequence.residues[j - 1].codon[0]);
       double feature_score = 0;

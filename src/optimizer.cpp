@@ -19,8 +19,12 @@ namespace {
 
 std::vector<fasta::SequenceList> optimizer::optimize_alignment(
     const std::vector<fasta::SequenceList>& alignment,
-    double domain_modifier, double motif_modifier, double ptm_modifier,
-    const std::string& sbst_mat) {
+    t::SettingsMap& aln_params) {
+
+  double ptm_modifier = boost::get<double>(aln_params["ptm_modifier"]);
+  double motif_modifier = boost::get<double>(aln_params["motif_modifier"]);
+  double domain_modifier = boost::get<double>(aln_params["domain_modifier"]);
+  std::string sbst_mat = boost::get<std::string>(aln_params["sbst_mat"]);
   std::vector<optimizer::MoveData> m = optimizer::calculate_move_scores(
       alignment, domain_modifier, motif_modifier, ptm_modifier, sbst_mat);
   optimizer::filter_move_data(m);

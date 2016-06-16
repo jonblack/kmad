@@ -6,12 +6,12 @@
 
 
 FeatureScores::FeatureScores(const std::vector<std::string>& features,
-    double domain_modifier, double ptm_modifier, double motif_modifier,
-    double strct_modifier, std::unordered_map<std::string, double> motif_probabilities)
-: m_domain_modifier(domain_modifier),
-  m_ptm_modifier(ptm_modifier),
-  m_strct_modifier(strct_modifier),
-  m_motif_modifier(motif_modifier),
+    t::SettingsMap& aln_params,
+    const std::unordered_map<std::string, double>& motif_probabilities)
+: m_domain_modifier(boost::get<double>(aln_params["domain_modifier"])),
+  m_ptm_modifier(boost::get<double>(aln_params["ptm_modifier"])),
+  m_strct_modifier(boost::get<double>(aln_params["strct_modifier"])),
+  m_motif_modifier(boost::get<double>(aln_params["motif_modifier"])),
   m_features(features),
   m_motif_probabilities(motif_probabilities)
 {}

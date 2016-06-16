@@ -4,14 +4,17 @@
 #include "msa.h"
 #include "outfile.h"
 #include "seq_data.h"
+#include "types.h"
 
 #include <boost/program_options.hpp>
+#include <boost/variant.hpp>
 #include <ctime>
 #include <iostream>
 #include <stdexcept>
 
 
 namespace po = boost::program_options;
+namespace t = types;
 
 
 int main(int argc, char *argv[]) {
@@ -83,7 +86,7 @@ int main(int argc, char *argv[]) {
         "feature consensus output file"
       )
       ("feat-map", po::value<std::string>(&mapfilename),
-       "feature map file" 
+       "feature map file"
       )
       ("feat_cutoff", po::value<double>(&conservation_cutoff)
           ->default_value(0.5),
@@ -152,7 +155,7 @@ int main(int argc, char *argv[]) {
                 << std::endl;
       std::exit(EXIT_FAILURE);
     }
-     
+
     f_config::FeatureSettingsMap f_set;
     // if the '--conf' option is chosen parse the configuration file
     if (vm.count("conf") == 1) {
@@ -167,6 +170,24 @@ int main(int argc, char *argv[]) {
       std::cerr << "Error: " << e.what() << std::endl;
       std::exit(EXIT_FAILURE);
     }
+    t::SettingsMap aln_params = {
+            {"gop", gap_open_pen},
+            {"gep", gap_ext_pen},
+            {"pend", end_pen},
+            {"ptm", ptm_modifier},
+            {"domain", domain_modifier},
+            {"motif", motif_modifier},
+            {"strct", strct_modifier},
+            {"no_feat", no_feat},
+            {"codon_length", codon_length},
+            {"fade_out", fade_out},
+            {"first_gapped", first_gapped},
+            {"optimize", optimize},
+            {"sbst_mat", sbst_mat},
+            {"one_round", one_round},
+	    {"refine_seq", refine_seq}
+    };
+
     bool gapped = false;
     // combine data from fasta with data from the config file -> seq_data
     seq_data::SequenceData sequence_data_plain = seq_data::process_fasta_data(
@@ -174,13 +195,7 @@ int main(int argc, char *argv[]) {
     // perform the alignment
     std::vector<fasta::SequenceList> alignment;
     if (!refine) {
-      alignment = msa::run_msa(sequence_data_plain, 
-                               f_set, gap_open_pen,
-                               gap_ext_pen, end_pen, domain_modifier, 
-                               motif_modifier, ptm_modifier, strct_modifier,
-                               codon_length,
-                               one_round, sbst_mat, first_gapped, optimize,
-                               fade_out, no_feat);
+      alignment = msa::run_msa(sequence_data_plain, f_set, aln_params);
     } else {
       bool gapped = true;
       seq_data::SequenceData sequence_data_alignment = seq_data::process_fasta_data(
@@ -188,21 +203,15 @@ int main(int argc, char *argv[]) {
       if (refine_seq == 0) {
         refine_seq = fasta_data.sequences.size();
       }
-      alignment = msa::refine_alignment(sequence_data_plain, 
+      alignment = msa::refine_alignment(sequence_data_plain,
                                         sequence_data_alignment,
-                                        f_set, gap_open_pen,
-                                        gap_ext_pen, end_pen, domain_modifier, 
-                                        motif_modifier, ptm_modifier,
-                                        strct_modifier,
-                                        codon_length,
-                                        one_round, sbst_mat, first_gapped,
-                                        optimize, fade_out, refine_seq, no_feat);
+                                        f_set, aln_params);
     }
 
-    // write alignment to file 
+    // write alignment to file
     int al_out_index = 1;
     if (first_gapped) {
-      first_gapped = 0; 
+      first_gapped = 0;
     }
     if (out_encoded) {
       outfile::write_encoded_alignment(alignment[al_out_index],

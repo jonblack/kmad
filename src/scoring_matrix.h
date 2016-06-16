@@ -3,7 +3,9 @@
 
 
 #include "fasta.h"
+#include "types.h"
 
+namespace t = types;
 
 typedef std::vector<double> ScoringMatrixRow;
 typedef std::vector<ScoringMatrixRow> SingleScoringMatrix;
@@ -21,8 +23,7 @@ public:
   /// @param endPenalty penalty for gaps at the beginning and the end
   ///
   ScoringMatrix(int profile_length, int sequence_length,
-                double gap_open_pen, double end_pen,
-                double gap_ext_pen, const bool no_feat);
+	  t::SettingsMap& aln_params);
   ///
   /// Fills in the scoring matrices m_matrix_v, m_matrix_g, m_matrix_h
   ///
@@ -33,7 +34,7 @@ public:
   /// traces back the alignment path in the scoring matrices
   ///
   fasta::SequenceList backtrace_alignment_path(
-      const fasta::Sequence& sequence, 
+      const fasta::Sequence& sequence,
       const profile::ProfileMap& profile,
       const FeatureScores& f_profile,
       int codon_length);

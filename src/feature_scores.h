@@ -3,10 +3,14 @@
 
 #include "fasta.h"
 #include "f_config.h"
+#include "types.h"
 
+
+namespace t = types;
 
 typedef std::vector<double> Occurences;
 typedef std::vector<double> Scores;
+
 
 class FeatureScores {
   public:
@@ -14,9 +18,8 @@ class FeatureScores {
     /// costructor
     ///
     FeatureScores(const std::vector<std::string>& features,
-                  double domain_modifier, double ptm_modifier,
-                  double motif_modifier, double strct_modifier,
-                    std::unordered_map<std::string, double> motif_probabilities);
+		  t::SettingsMap& aln_params,
+                  const std::unordered_map<std::string, double>& motif_probabilities);
     ///
     /// updates the 'profile-like' feature scores based on an alignment
     ///

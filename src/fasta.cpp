@@ -11,31 +11,31 @@
 namespace fs = boost::filesystem;
 namespace {
   std::unordered_map<char, std::string> strct_code_map = {
-          {'H', "s_a_helix"}, {'T', "s_turn"}, {'S', "s_b_ladder"},
-          {'B', "s_b_bridge"}, {'G', "s_310_helix"}, {'I', "s_pi_helix"},
-          {'E', "s_b_ladder"},
+    {'H', "s_a_helix"}, {'T', "s_turn"}, {'S', "s_b_ladder"},
+    {'B', "s_b_bridge"}, {'G', "s_310_helix"}, {'I', "s_pi_helix"},
+    {'E', "s_b_ladder"},
   };
   std::unordered_map<char, std::string> ptm_code_map = {
-          {'N', "p_phosph0"}, {'O', "p_phosph1"}, {'P', "p_phosph2"},
-          {'Q', "p_phosph3"}, {'B', "p_acet0"}, {'C', "p_acet1"},
-          {'D', "p_acet2"}, {'E', "p_acet3"}, {'F', "p_Nglyc0"},
-          {'G', "p_Nglyc1"}, {'H', "p_Nglyc2"}, {'I', "p_Nglyc3"},
-          {'J', "p_amid0"}, {'K', "p_amid1"}, {'L', "p_amid2"},
-          {'M', "p_amid3"}, {'R', "p_hydroxy0"}, {'S', "p_hydroxy1"},
-          {'T', "p_hydroxy2"}, {'U', "p_hydroxy3"}, {'V', "p_methyl0"},
-          {'W', "p_methyl1"}, {'X', "p_methyl2"}, {'Y', "p_methyl3"},
-          {'Z', "p_Oglyc0"}, {'a', "p_Oglyc1"}, {'b', "p_Oglyc2"},
-          {'c', "p_Oglyc3"}, {'d', "p_phosphP"}, {'s', "p_cys_bridge0"}};
+    {'N', "p_phosph0"}, {'O', "p_phosph1"}, {'P', "p_phosph2"},
+    {'Q', "p_phosph3"}, {'B', "p_acet0"}, {'C', "p_acet1"},
+    {'D', "p_acet2"}, {'E', "p_acet3"}, {'F', "p_Nglyc0"},
+    {'G', "p_Nglyc1"}, {'H', "p_Nglyc2"}, {'I', "p_Nglyc3"},
+    {'J', "p_amid0"}, {'K', "p_amid1"}, {'L', "p_amid2"},
+    {'M', "p_amid3"}, {'R', "p_hydroxy0"}, {'S', "p_hydroxy1"},
+    {'T', "p_hydroxy2"}, {'U', "p_hydroxy3"}, {'V', "p_methyl0"},
+    {'W', "p_methyl1"}, {'X', "p_methyl2"}, {'Y', "p_methyl3"},
+    {'Z', "p_Oglyc0"}, {'a', "p_Oglyc1"}, {'b', "p_Oglyc2"},
+    {'c', "p_Oglyc3"}, {'d', "p_phosphP"}, {'s', "p_cys_bridge0"}};
 }
 
 
 fasta::FastaData fasta::parse_fasta(
-        std::string filename, int codon_length, bool refine, int refine_seq) {
+    std::string filename, int codon_length, bool refine, int refine_seq) {
 
-        fs::path p(filename);
-        if (!fs::exists(p)) {
-                throw std::invalid_argument("File not found: " + filename);
-        }
+  fs::path p(filename);
+  if (!fs::exists(p)) {
+          throw std::invalid_argument("File not found: " + filename);
+  }
 
   std::ifstream fastafile(filename.c_str());
   std::string line;

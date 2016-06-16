@@ -32,11 +32,11 @@ BOOST_AUTO_TEST_CASE(test_update_scores)
                                    "s_a_helix", "s_turn",
                                    "s_b_ladder", "s_b_bridge",
                                    "s_310_helix", "s_pi_helix",
-                                   "s_b_ladder", "m_aa", 
+                                   "s_b_ladder", "m_aa",
                                    "m_ab", "m_ac",
                                    "d_aa", "d_ac",
                                    "USR_feature1", "USR_feature2"};
-  
+
   // SEQUENCE S1
   fasta::Residue r1_1("AAAAdaa", std::vector<std::string>({"p_phosphP",
                                                           "m_aa"}));
@@ -66,7 +66,7 @@ BOOST_AUTO_TEST_CASE(test_update_scores)
   fasta::Residue r4_3("KAaaZAA", std::vector<std::string>({"p_phosph0",
                                                            "d_aa"}));
   fasta::Residue r4_4("LAAAAaa", std::vector<std::string>({"m_aa"}));
-  
+
   // SEQUENCE S5
   fasta::Residue r5_1("AAAAAac", std::vector<std::string>({"m_ac"}));
   fasta::Residue r5_2("MAAAZAA", std::vector<std::string>({"p_phosph0"}));
@@ -85,7 +85,13 @@ BOOST_AUTO_TEST_CASE(test_update_scores)
                                          {"m_ab", 0.5},
                                          {"m_ac", 0.8}};
 
-  FeatureScores f_profile(feature_list, 4, 10, 3, 0, probs);
+  t::SettingsMap aln_params = {
+          {"ptm", 10},
+          {"domain", 4},
+          {"motif", 3},
+          {"strct", 0}
+  };
+  FeatureScores f_profile(feature_list, aln_params, probs);
   f_config::FeatureSettings settings1;
   settings1.add_score = 1;
   settings1.subtract_score = 0;
@@ -95,7 +101,7 @@ BOOST_AUTO_TEST_CASE(test_update_scores)
   settings2.subtract_score = 1;
   settings2.add_features = {"USR_feature2"};
   settings2.subtract_features = {"USR_feature1"};
-  f_config::FeatureSettingsMap s_map; 
+  f_config::FeatureSettingsMap s_map;
   s_map = {{"USR_feature1", settings1},
            {"USR_feature2", settings2}};
   std::vector<double> identities(sequences.size(), 1.0);
@@ -153,7 +159,13 @@ BOOST_AUTO_TEST_CASE(test_update_scores)
     }
   }
   feature_list = {"p_phosph9", "m_aa", "d_aa"};
-  f_profile = FeatureScores(feature_list, 4, 10, 3, 0, probs);
+  aln_params = {
+          {"ptm", 10},
+          {"domain", 4},
+          {"motif", 3},
+          {"strct", 0}
+  };
+  f_profile = FeatureScores(feature_list, aln_params, probs);
   // SEQUENCE S1
   r1_1 = fasta::Residue ("AAAAdaa", std::vector<std::string>({"p_phosph9",
                                                               "m_aa"}));
